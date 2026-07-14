@@ -13,17 +13,18 @@
   <aside class="portal-side">
     <a class="portal-brand" href="index.html"><i>P</i><span>PEYZAJDER<small>Üye Portalı</small></span></a>
     <nav>
-      <a class="active" href="#application">Dernek üyeliği</a>
-      <a href="#profile">Kişisel bilgilerim</a>
+      <a class="active" href="#application" data-pending-only>Dernek üyeliği</a>
+      <a href="#profile" data-approved-only hidden>Kişisel bilgilerim</a>
       <a href="#company" data-corporate-only hidden>Firma paneli</a>
       <a href="#companyJobs" data-corporate-only hidden>İlan taleplerim</a>
       <a href="archive.html">İçerik merkezi</a>
-      <a href="index.html#rehber">Firma rehberi</a>
+      <a href="index.html#rehber" data-member-only hidden>Firma rehberi</a>
     </nav>
     <button id="logout">Oturumu kapat</button>
   </aside>
   <main class="portal-main">
     <div id="createdNotice" class="success-notice" hidden>Hesabınız oluşturuldu. Başvuru adımlarına buradan devam edebilirsiniz.</div>
+    <div id="approvalNotice" class="success-notice" hidden></div>
     <header>
       <div><small>SİTE ÜYESİ</small><h1 id="hello">Merhaba</h1></div>
       <span id="status" class="badge">Başvuru yapılmadı</span>
@@ -63,7 +64,7 @@
         </form>
       </article>
     </section>
-    <section id="profile" class="profile-card">
+    <section id="profile" class="profile-card" data-approved-only hidden>
       <div>
         <span class="number">03</span>
         <h3>Kişisel bilgilerim</h3>
@@ -77,6 +78,14 @@
         <button class="portal-button">Bilgilerimi kaydet →</button>
         <p id="profileMessage"></p>
       </form>
+    </section>
+    <section id="memberDirectory" class="profile-card" data-member-only hidden>
+      <div>
+        <span class="number">04</span>
+        <h3>Firma arama ekranı</h3>
+        <p>Onaylı bireysel ve öğrenci üyeler firma rehberinde şirket adı, şehir ve faaliyet alanlarına göre arama yapabilir.</p>
+      </div>
+      <a class="portal-button" href="index.html#rehber">Firma rehberini aç →</a>
     </section>
     <section id="company" class="company-card" data-corporate-only hidden>
       <div class="company-head">

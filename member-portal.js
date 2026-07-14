@@ -33,6 +33,48 @@ function setCorporateArea(visible){
   }
 }
 
+function setApprovedArea(visible){
+  document.querySelectorAll('[data-approved-only]').forEach(el=>{el.hidden=!visible});
+  if(!visible&&location.hash==='#profile'){
+    history.replaceState({},'',`${location.pathname}#application`);
+    document.querySelector('#application')?.scrollIntoView({block:'start'});
+  }
+}
+
+function setMemberArea(visible){
+  document.querySelectorAll('[data-member-only]').forEach(el=>{el.hidden=!visible});
+}
+
+function setPendingArea(visible){
+  document.querySelectorAll('[data-pending-only]').forEach(el=>{el.hidden=!visible});
+}
+
+function setPortalMode(d){
+  const approved=!!d.membershipApproved;
+  const corporate=d.panelType==='corporate';
+  setPendingArea(!approved);
+  setApprovedArea(approved);
+  setCorporateArea(corporate);
+  setMemberArea(approved&&!corporate);
+  document.querySelector('.portal-hero').hidden=approved;
+  document.querySelector('#application').hidden=approved;
+  const notice=document.querySelector('#approvalNotice');
+  if(!approved){
+    notice.hidden=false;
+    notice.textContent=d.application
+      ? `İmzalı başvurunuz alındı. ${d.application.membershipType||d.membershipType||'Üyelik'} başvurunuz admin veya moderatör onayından sonra panele açılacak.`
+      : 'Dernek üyeliği için ıslak imzalı başvuru formunu yükleyin. Paneliniz onaydan sonra açılacak.';
+  }else{
+    notice.hidden=true;
+    notice.textContent='';
+    const target=corporate?'#company':'#profile';
+    if(!location.hash||location.hash==='#application'){
+      history.replaceState({},'',`${location.pathname}${target}`);
+      document.querySelector(target)?.scrollIntoView({block:'start'});
+    }
+  }
+}
+
 function toggleOrganizationField(){
   const select=document.querySelector('#portalMembershipType');
   const field=document.querySelector('#organizationField');
@@ -122,8 +164,8 @@ async function load(){
   await loadMemberTypes(selectedType);
   fillProfile(d);
   renderFees(d.finance||{});
-  const showCorporatePanel=!!d.isCorporate;
-  setCorporateArea(showCorporatePanel);
+  const showCorporatePanel=d.panelType==='corporate';
+  setPortalMode(d);
   if(showCorporatePanel){
     fillCompany(d.company||{email:d.email,phone:d.phone,city:d.city,name:d.application?.organization||''});
     loadJobs();
@@ -132,9 +174,11 @@ async function load(){
     document.querySelector('#createdNotice').hidden=false;
     history.replaceState({},'',location.pathname);
   }
-  if(d.application){
+  if(d.application&&!d.membershipApproved){
     document.querySelector('#currentApplication').hidden=false;
     document.querySelector('#applicationInfo').innerHTML=`<b>${d.application.documentName||'İmzalı başvuru formu'}</b><span>${d.application.status}</span><a href="${d.application.documentUrl}" target="_blank">Belgeyi görüntüle</a>`;
+  }else{
+    document.querySelector('#currentApplication').hidden=true;
   }
 }
 
@@ -172,7 +216,10 @@ document.querySelector('#jobForm').addEventListener('submit',async e=>{
 
 document.querySelector('#logout').onclick=async()=>{await fetch(apiPath('/api/member/logout'),{credentials:'same-origin'});location.href='member-login.html'};
 document.querySelectorAll('.portal-side nav a[href^="#"]').forEach(a=>a.onclick=()=>{document.querySelectorAll('.portal-side nav a').forEach(x=>x.classList.remove('active'));a.classList.add('active')});
+setApprovedArea(false);
 setCorporateArea(false);
+setMemberArea(false);
+setPendingArea(true);
 renderActivities();
 toggleOrganizationField();
 load();
