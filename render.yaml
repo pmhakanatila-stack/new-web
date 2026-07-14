@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: peyzajder-new-web
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: PEYZAJDER_ADMIN_USER
+        sync: false
+      - key: PEYZAJDER_ADMIN_PASSWORD
+        sync: false
