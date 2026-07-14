@@ -13,13 +13,28 @@ const types={'.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8'
 const collections=['content','events','boards','members','firms','accounts','memberGroups','applications','dues','duePeriods','payments','businessLedger','decisions','subscribers','emailCampaigns','smsCampaigns','notifications','surveys','galleries','videos','articles','authors','publications','webinars','menus','sliders','popups','promoPanels','socialLinks','sponsors','sponsorCategories','jobPosts','bankAccounts','contactMessages','supportTickets','settings','users','modules'];
 await mkdir(dataDir,{recursive:true});await mkdir(uploadDir,{recursive:true});
 
+async function readJsonFile(file){
+  try{return JSON.parse((await readFile(file,'utf8')).replace(/^\uFEFF/,''))}catch{return null}
+}
+
 async function initialDb(){
   try{return JSON.parse((await readFile(dbFile,'utf8')).replace(/^\uFEFF/,''))}catch{}
   let migrated=[];try{const source=JSON.parse((await readFile(join(root,'content-data.json'),'utf8')).replace(/^\uFEFF/,''));migrated=source.pages.filter(x=>x.title&&!x.error).map((x,i)=>({id:`content-${i+1}`,title:x.title,category:x.category,status:'Yayında',summary:x.paragraphs?.[0]||'',body:(x.paragraphs||[]).join('\n\n'),image:x.images?.[0]?.src||'',sourceUrl:x.url,createdAt:new Date().toISOString()}))}catch{}
-  const db={content:migrated,events:migrated.filter(x=>x.category==='etkinlikler').map(x=>({...x,id:`event-${x.id}`})),boards:[{id:'board-1',title:'Yönetim Kurulu',name:'Fulya AKFİDAN SEVİM',role:'Başkan',status:'Aktif',createdAt:new Date().toISOString()}],members:[],firms:[],activity:[]};for(const c of collections)db[c]=[];await save(db);return db;
+  const db={content:migrated,events:migrated.filter(x=>x.category==='etkinlikler').map(x=>({...x,id:`event-${x.id}`})),boards:[{id:'board-1',title:'Yönetim Kurulu',name:'Fulya AKFİDAN SEVİM',role:'Başkan',status:'Aktif',createdAt:new Date().toISOString()}],members:[],firms:[],activity:[]};for(const c of collections)if(!Array.isArray(db[c]))db[c]=[];await save(db);return db;
 }
 async function save(db){await writeFile(dbFile,JSON.stringify(db,null,2),'utf8')}
 let db=await initialDb();for(const c of collections)if(!Array.isArray(db[c]))db[c]=[];if(!Array.isArray(db.activity))db.activity=[];if(!Array.isArray(db.accounts))db.accounts=[];
+const seedDb=await readJsonFile(join(root,'seed-cms.json'));
+let seedChanged=false;
+if(seedDb&&typeof seedDb==='object'){
+  for(const c of collections){
+    if(Array.isArray(seedDb[c])&&seedDb[c].length&&!db[c].length){
+      db[c]=seedDb[c];
+      seedChanged=true;
+    }
+  }
+}
+if(seedChanged)await save(db);
 const defaultMemberTypes=[['Bireysel',1],['Kurumsal',2],['Öğrenci',3]];
 const earlyNorm=s=>String(s||'').trim().toLocaleLowerCase('tr-TR');
 let memberTypesChanged=false;
