@@ -1,0 +1,7 @@
+﻿server*.log
+work/
+.codex/
+.agents/
+.codex-remote-attachments/
+.DS_Store
+Thumbs.db

@@ -1,0 +1,5 @@
+#editorialDrawer,
+.editorial-drawer,
+.editorial-card{
+  display:none!important;
+}

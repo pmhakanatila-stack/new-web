@@ -1,0 +1,26 @@
+[
+  {
+    "id": "articles-1783889444715-e4f6fc",
+    "title": "Nereye gidiyor bu web tasarım işleri?",
+    "summary": "3 haftadır gece gündüz emekle...",
+    "body": "Peyzajder.com dijital yarışma platformunu kurunca peyzajder.org ana sayfasının da entegreli çalışan bir sistemi olmasını istedik.",
+    "author": "Deneme Köşe Yazarı",
+    "authorEmail": "yazar@peyzajder.org",
+    "date": "2026-07-11",
+    "status": "Aktif",
+    "createdAt": "2026-07-12T20:50:44.715Z",
+    "updatedAt": "2026-07-12T20:54:50.790Z",
+    "featuredUntil": ""
+  },
+  {
+    "id": "articles-1783877607988-783a4e",
+    "title": "Deneme köşe yazısı",
+    "author": "Hakan Atila",
+    "date": "2026-07-11",
+    "featuredUntil": "2026-08-12",
+    "status": "Aktif",
+    "body": "Deneme yazısı buraya gelecek.",
+    "createdAt": "2026-07-12T17:33:27.988Z",
+    "updatedAt": "2026-07-12T19:54:14.628Z"
+  }
+]

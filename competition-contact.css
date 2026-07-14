@@ -1,0 +1,47 @@
+.platform-link{color:#8b5b3d;border-color:#8b5b3d}
+.competition-actions{display:flex;gap:22px;align-items:center;flex-wrap:wrap;margin-top:36px}
+.competition-status{padding:18px max(7vw,30px);background:#f8f8f4;border-bottom:1px solid #d8ddd6;color:#536158;font-size:13px}
+.competition-sponsors{padding:62px max(6vw,30px);background:#f8f8f4;border-bottom:1px solid #d8ddd6}
+.sponsor-groups{display:grid;gap:22px;margin-top:24px}
+.sponsor-group{background:#fff;border:1px solid #d8ddd6;padding:24px}
+.sponsor-group h3{margin:0 0 18px;font:800 18px Manrope;color:#173523}
+.sponsor-group>div{display:flex;flex-wrap:wrap;gap:14px}
+.competition-sponsor-logo{min-width:160px;height:86px;padding:14px 20px;border:1px solid #d8ddd6;background:#fff;display:grid;place-items:center;transition:transform .25s,box-shadow .25s,border-color .25s}
+.competition-sponsor-logo:hover{transform:translateY(-4px);box-shadow:0 18px 36px #203d2915;border-color:#bdd66e}
+.competition-sponsor-logo img{max-width:150px;max-height:56px;object-fit:contain}
+.competition-sponsor-logo span{font:800 13px Manrope;color:#456b4f;text-align:center}
+.competition-section{padding:85px max(6vw,30px);background:#fff}
+.competition-section.muted-section{background:#eef1eb}
+.competition-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
+.competition-card,.competition-empty{background:#fff;border:1px solid #d8ddd6;min-height:420px;display:flex;flex-direction:column;transition:transform .35s,box-shadow .35s}
+.muted-section .competition-card,.muted-section .competition-empty{background:#f9faf6}
+.competition-card:hover{transform:translateY(-7px);box-shadow:0 22px 50px #203d2918}
+.competition-media{height:210px;background:linear-gradient(135deg,#dce8d8,#a2ba9a);display:grid;place-items:center;overflow:hidden}
+.competition-media img{height:100%;width:100%;object-fit:cover}
+.competition-media span,.competition-empty span{font:700 22px Manrope;color:#355841;letter-spacing:.08em}
+.competition-copy{padding:25px;display:flex;flex-direction:column;flex:1}
+.competition-copy small{font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:#55735d;font-weight:700}
+.competition-copy h3{font-size:24px;line-height:1.18;margin:12px 0}
+.competition-copy p{color:#68736c;line-height:1.65}
+.competition-meta{display:flex;flex-direction:column;gap:5px;margin:auto 0 20px;color:#6d786f;font-size:12px}
+.competition-empty{justify-content:center;padding:34px;gap:18px}
+.competition-empty h3{font-size:24px;line-height:1.25}
+.contact-grid{display:grid;grid-template-columns:.85fr 1.15fr;gap:28px;padding:85px max(6vw,30px)}
+.contact-info,.contact-form{background:#fff;border:1px solid #d8ddd6;padding:38px}
+.contact-info h2,.contact-form h2{font-size:clamp(30px,3vw,44px);line-height:1.08}
+.info-list{display:grid;gap:18px;margin:35px 0}
+.info-list p{margin:0;padding-bottom:18px;border-bottom:1px solid #e3e7e1}
+.info-list b{display:block;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#55735d;margin-bottom:7px}
+.info-list span,.info-list a{color:#536158;line-height:1.6}
+.map-card{min-height:220px;background:radial-gradient(circle at 20% 20%,#bdd66e55 0 18%,transparent 18.3%),linear-gradient(135deg,#173523,#4c7055);color:white;padding:28px;display:flex;flex-direction:column;justify-content:flex-end}
+.map-card span{font:700 12px Manrope;letter-spacing:.16em;text-transform:uppercase;color:#bdd66e}
+.map-card p{color:#dce7df;margin:10px 0 0}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.form-grid label{font-size:12px;font-weight:700;color:#26372d}
+.form-grid input,.form-grid select,.form-grid textarea{width:100%;margin-top:8px;border:1px solid #ced7cd;background:#f8f9f6;padding:14px;font:inherit;outline:none}
+.form-grid input:focus,.form-grid select:focus,.form-grid textarea:focus{border-color:#446d55;background:white}
+.form-grid .full{grid-column:1/-1}
+.contact-form button{margin-top:20px}
+.form-message{margin-top:18px;color:#446d55;font-weight:700}
+@media(max-width:950px){.competition-grid,.contact-grid{grid-template-columns:1fr}.archive-header nav{gap:14px}.platform-link{display:none!important}.competition-sponsor-logo{min-width:calc(50% - 8px)}}
+@media(max-width:560px){.competition-sponsor-logo{min-width:100%}}

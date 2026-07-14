@@ -1,0 +1,103 @@
+/* Homepage stream cards: keep imported long titles/descriptions inside their own cards. */
+.stream-grid{
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;
+}
+
+.stream-column{
+  min-width:0!important;
+  overflow:hidden;
+}
+
+.stream-column>header{
+  grid-template-columns:auto minmax(0,1fr) auto!important;
+}
+
+.stream-column header h3,
+.stream-column header small{
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+.stream-column header a{
+  white-space:nowrap;
+}
+
+.stream-item{
+  grid-template-columns:82px minmax(0,1fr)!important;
+  min-width:0;
+}
+
+.stream-item>*{
+  min-width:0;
+}
+
+.stream-item small{
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+.stream-item h4{
+  max-width:100%;
+  overflow:hidden;
+  overflow-wrap:anywhere;
+  word-break:normal;
+}
+
+.stream-item p{
+  max-width:100%;
+  white-space:normal!important;
+  line-height:1.45;
+  display:-webkit-box;
+  -webkit-line-clamp:2;
+  -webkit-box-orient:vertical;
+  overflow:hidden;
+  overflow-wrap:anywhere;
+  text-overflow:clip;
+}
+
+@media(max-width:1180px){
+  .stream-item{
+    grid-template-columns:68px minmax(0,1fr)!important;
+    gap:12px;
+  }
+
+  .stream-item img,
+  .stream-placeholder{
+    width:68px!important;
+    height:56px!important;
+  }
+}
+
+@media(max-width:650px){
+  .home-streams{
+    overflow:hidden;
+  }
+
+  .streams-heading{
+    grid-template-columns:1fr!important;
+    gap:22px!important;
+  }
+
+  .stream-grid{
+    grid-template-columns:minmax(0,1fr)!important;
+    gap:18px!important;
+  }
+
+  .stream-column,
+  .stream-column:last-child{
+    grid-column:auto!important;
+    width:100%!important;
+    max-width:100%!important;
+  }
+
+  .stream-column>header{
+    min-height:92px;
+    padding:18px!important;
+  }
+
+  .stream-item{
+    grid-template-columns:64px minmax(0,1fr)!important;
+  }
+}

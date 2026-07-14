@@ -1,0 +1,10 @@
+.platform-link{
+  color:#8b5b3d!important;
+  border-color:#8b5b3d!important;
+}
+
+@media(max-width:1380px){
+  .header-account .platform-link{
+    display:none!important;
+  }
+}

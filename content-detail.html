@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>İçerik detayı — PEYZAJDER</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="content-detail.css">
+</head>
+<body class="detail-body">
+  <header class="detail-header">
+    <a class="brand" href="index.html"><img src="assets/peyzajder-logo.png" alt="PEYZAJDER"><span>PEYZAJDER</span></a>
+    <nav>
+      <a href="index.html">Ana sayfa</a>
+      <a href="archive.html">İçerik merkezi</a>
+      <a href="contact.html">İletişim</a>
+    </nav>
+  </header>
+  <main id="detailRoot" class="detail-shell" aria-live="polite">
+    <p class="detail-loading">İçerik yükleniyor…</p>
+  </main>
+  <script>
+    const apiPath=path=>window.peyzajderApiPathwindow.peyzajderApiPath(path):String(path||'');
+    const esc=s=>String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    const params=new URLSearchParams(location.search);
+    const id=params.get('id')||'';
+    const root=document.querySelector('#detailRoot');
+    const paragraphs=text=>String(text||'').split(/\n{2,}|\r\n/).map(x=>x.trim()).filter(Boolean);
+    fetch(apiPath(`/api/public/itemid=${encodeURIComponent(id)}`),{cache:'no-store'})
+      .then(r=>r.okr.json():Promise.reject())
+      .then(item=>{
+        document.title=`${item.title||'İçerik'} — PEYZAJDER`;
+        const parts=paragraphs(item.body||item.summary);
+        root.innerHTML=`
+          <section class="detail-hero">
+            <div>
+              <p class="eyebrow">${esc(item.type||item.category||'PEYZAJDER')}</p>
+              <h1>${esc(item.title)}</h1>
+              <p>${esc(item.summary||'PEYZAJDER gündeminden güncel içerik.')}</p>
+              <a class="text-link" href="archive.html">İçerik merkezine dön <span>→</span></a>
+            </div>
+            ${item.image`<figure><img src="${esc(item.image)}" alt="${esc(item.title)}"></figure>`:''}
+          </section>
+          <article class="detail-content">
+            ${parts.lengthparts.map(p=>`<p>${esc(p)}</p>`).join(''):`<p>${esc(item.summary||'Bu içerik için detay metni hazırlanıyor.')}</p>`}
+            ${item.sourceUrl`<a class="source-link" href="${esc(item.sourceUrl)}" target="_blank" rel="noopener">Kaynak bağlantıyı aç ↗</a>`:''}
+          </article>`;
+      })
+      .catch(()=>{root.innerHTML='<section class="detail-error"><h1>İçerik bulunamadı</h1><p>Bu kayıt kaldırılmış veya yayından alınmış olabilir.</p><a href="index.html">Ana sayfaya dön →</a></section>';});
+  </script>
+</body>
+</html>

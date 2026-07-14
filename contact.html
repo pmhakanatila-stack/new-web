@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>İletişim — PEYZAJDER</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="archive.css">
+  <link rel="stylesheet" href="competition-contact.css">
+<script>window.PEYZAJDER_BASE_PATH="/new_web";window.PEYZAJDER_API_BASE="/new_web/api";window.peyzajderApiPath=function(path){return window.PEYZAJDER_API_BASE+String(path||"").replace(/^\/api/,"");};</script><meta name="robots" content="noindex,nofollow"></head>
+<body class="archive-body contact-body">
+  <header class="archive-header">
+    <a class="brand" href="index.html"><span class="brand-mark">P</span><span><strong>PEYZAJDER</strong><small>Peyzaj Mimarları ve Sektör Profesyonelleri Derneği</small></span></a>
+    <nav><a href="index.html">Ana sayfa</a><a href="competitions.html">Yarışmalar</a><a href="member-login.html">Üye girişi</a></nav>
+  </header>
+  <main>
+    <section class="archive-hero contact-hero">
+      <p class="eyebrow">İletişim</p>
+      <h1>Yönetime doğrudan,<br><em>temiz bir kanaldan ulaşın.</em></h1>
+      <p>Üyelik, yarışmalar, etkinlikler, firma rehberi ve iş birlikleri için mesajınızı ilgili konu başlığıyla iletin.</p>
+    </section>
+
+    <section class="contact-grid">
+      <article class="contact-info">
+        <p class="eyebrow">Dernek bilgileri</p>
+        <h2>Peyzaj Mimarları ve Sektör Profesyonelleri Derneği</h2>
+        <div class="info-list">
+          <p><b>Adres</b><span>Alaaddinbey Mah. Taşlıpare Sk. No:69 Nilüfer / Bursa</span></p>
+          <p><b>Telefon</b><a href="tel:+905364518100">+90 536 451 81 00</a></p>
+          <p><b>E-posta</b><a href="mailto:bilgi@peyzajder.org">bilgi@peyzajder.org</a></p>
+          <p><b>Dijital yarışma platformu</b><a href="https://peyzajder.com" target="_blank" rel="noopener">peyzajder.com</a></p>
+        </div>
+        <div class="map-card">
+          <span>Harita alanı</span>
+          <p>Nilüfer / Bursa merkezli dernek iletişim noktası.</p>
+        </div>
+      </article>
+
+      <form id="contactForm" class="contact-form">
+        <p class="eyebrow">Mesaj paneli</p>
+        <h2>Yönetime mesaj gönderin</h2>
+        <div class="form-grid">
+          <label>Ad soyad<input name="name" required></label>
+          <label>E-posta<input name="email" type="email" required></label>
+          <label>Telefon<input name="phone"></label>
+          <label>Konu<select name="subject" required><option>Üyelik</option><option>Yarışmalar</option><option>Etkinlik</option><option>Firma rehberi</option><option>Basın / iş birliği</option><option>Diğer</option></select></label>
+          <label class="full">Mesaj<textarea name="message" rows="7" required></textarea></label>
+        </div>
+        <button class="button" type="submit">Yönetime gönder →</button>
+        <p id="contactMessage" class="form-message"></p>
+      </form>
+    </section>
+  </main>
+  <script src="contact.js"></script>
+</body>
+</html>
+
+

@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Site Üyeliği — PEYZAJDER</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="membership.cssv=20260714-member-types">
+</head>
+<body>
+  <header>
+    <a class="brand" href="index.html">
+      <i>P</i>
+      <span>PEYZAJDER<small>Peyzaj Mimarları ve Sektör Profesyonelleri Derneği</small></span>
+    </a>
+    <nav>
+      <a href="index.html">Ana sayfa</a>
+      <a href="member-login.html">Üye girişi</a>
+      <a href="archive.html">İçerik merkezi</a>
+    </nav>
+  </header>
+  <main>
+    <section class="member-intro">
+      <p class="eyebrow">Birinci adım</p>
+      <h1>Önce site<br><em>hesabınızı açın.</em></h1>
+      <p>Site hesabınız oluşturulduktan sonra üye paneline girerek dernek üyelik formunu indirebilir, ıslak imzalı belgenizi sisteme yükleyebilirsiniz.</p>
+      <div class="steps">
+        <div><b>01</b><span>Site hesabı oluşturun</span></div>
+        <div><b>02</b><span>Üye panelinden formu indirin</span></div>
+        <div><b>03</b><span>İmzalı formu yükleyin</span></div>
+      </div>
+    </section>
+    <section class="form-side">
+      <form id="memberForm">
+        <p class="eyebrow">Site üyeliği</p>
+        <h2>Hesabınızı oluşturun</h2>
+        <div class="grid">
+          <label>Ad soyad<input name="name" required></label>
+          <label>E-posta<input name="email" type="email" required></label>
+          <label>Telefon<input name="phone" required></label>
+          <label>Şehir<input name="city"></label>
+          <label>Üyelik türü<select name="membershipType" id="membershipType" required><option>Bireysel</option><option>Kurumsal</option><option>Öğrenci</option></select><small id="memberTypeFee">Giriş bedeli yükleniyor…</small></label>
+          <label>Meslek / uzmanlık<input name="profession"></label>
+          <label>Şifre<input name="password" type="password" minlength="8" required><small>En az 8 karakter</small></label>
+        </div>
+        <label class="consent"><input name="consent" type="checkbox" required> Site üyelik hesabımın oluşturulması için verilerimin işlenmesini kabul ediyorum.</label>
+        <button type="submit">Site hesabı oluştur <span>→</span></button>
+        <p id="message"></p>
+        <p class="login-note">Zaten hesabınız var mı <a href="member-login.html">Üye girişi yapın</a></p>
+      </form>
+    </section>
+  </main>
+  <script src="membership.jsv=20260714-member-types"></script>
+</body>
+</html>

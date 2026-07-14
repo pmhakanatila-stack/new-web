@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Köşe Yazarı Paneli — PEYZAJDER</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="editorials.cssv=20260713-member-flow">
+</head>
+<body class="writer-body">
+  <main class="writer-shell">
+    <aside class="writer-side">
+      <a class="brand" href="index.html"><span class="brand-mark">P</span><span><strong>PEYZAJDER</strong><small>Köşe Yazarı Paneli</small></span></a>
+      <div><p class="eyebrow">Yazar alanı</p><h1>Yazınızı hazırlayın, onaya gönderin.</h1><p>Gönderilen yazılar moderatör veya admin onayından sonra Köşe Yazıları sayfasında yayınlanır.</p></div>
+      <button id="writerLogout">Oturumu kapat</button>
+    </aside>
+    <section class="writer-main">
+      <div id="writerGate" class="writer-gate"><h2>Köşe yazarı girişi gerekli</h2><p>Üye girişi sayfasından köşe yazarı hesabınızla giriş yapın.</p><a class="button" href="member-login.html">Giriş yap</a></div>
+      <div id="writerApp" hidden>
+        <header><div><small id="writerName"></small><h2>Yeni yazı gönder</h2></div><a class="text-link" href="editorials.html">Yayınlanan yazılar →</a></header>
+        <form id="writerForm" class="writer-form">
+          <label>Başlık<input name="title" required></label>
+          <label class="writer-image-field">Yazı görseli
+            <input id="writerImageFile" type="file" accept="image/*">
+            <input id="writerImagePath" name="image" type="text" placeholder="Görsel seçildiğinde WebP olarak yüklenecek">
+            <small>JPG/PNG/WebP seçebilirsiniz; sistem WebP olarak saklar.</small>
+          </label>
+          <label>Kısa özet<textarea name="summary" rows="3"></textarea></label>
+          <label>Yazı metni<textarea name="body" rows="13" required></textarea></label>
+          <button class="button" type="submit">Onaya gönder →</button>
+          <p id="writerMessage"></p>
+        </form>
+        <section><h2>Yazılarım</h2><div id="writerList" class="writer-list"></div></section>
+      </div>
+    </section>
+  </main>
+  <script src="writer-panel.jsv=20260713-member-flow"></script>
+</body>
+</html>

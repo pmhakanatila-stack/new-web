@@ -1,0 +1,99 @@
+.competition-promo{
+  position:relative;
+  overflow:hidden;
+  display:grid;
+  grid-template-columns:1.15fr .85fr;
+  gap:8vw;
+  align-items:center;
+  padding:105px max(6vw,30px);
+  background:
+    radial-gradient(circle at 88% 18%,rgba(189,214,110,.22) 0 13%,transparent 13.4%),
+    linear-gradient(135deg,#173523,#486a4f);
+  color:white;
+}
+
+.competition-promo:after{
+  content:"";
+  position:absolute;
+  right:-130px;
+  bottom:-260px;
+  width:520px;
+  height:520px;
+  border:1px solid rgba(189,214,110,.34);
+  border-radius:43% 57% 61% 39%;
+  box-shadow:0 0 0 48px rgba(189,214,110,.08),0 0 0 96px rgba(189,214,110,.045);
+}
+
+.competition-promo>*{
+  position:relative;
+  z-index:1;
+}
+
+.competition-promo .eyebrow{
+  color:#bdd66e;
+}
+
+.competition-promo h2{
+  max-width:850px;
+  font-size:clamp(36px,4vw,62px);
+  line-height:1.05;
+  margin-bottom:24px;
+}
+
+.competition-promo-copy>p:not(.eyebrow){
+  max-width:680px;
+  color:#dce8df;
+  font-size:18px;
+  line-height:1.75;
+}
+
+.promo-actions{
+  display:flex;
+  gap:24px;
+  align-items:center;
+  flex-wrap:wrap;
+  margin-top:34px;
+}
+
+.competition-promo .button{
+  background:#bdd66e;
+  color:#173523;
+}
+
+.competition-promo .text-link{
+  color:#fff;
+}
+
+.competition-promo-panel{
+  border:1px solid rgba(255,255,255,.22);
+  background:rgba(255,255,255,.08);
+  backdrop-filter:blur(10px);
+  padding:32px;
+  display:grid;
+  grid-template-columns:auto 1fr;
+  gap:22px 18px;
+}
+
+.competition-promo-panel span{
+  color:#bdd66e;
+  font-size:11px;
+  letter-spacing:.16em;
+}
+
+.competition-promo-panel b{
+  font:700 22px/1.15 Manrope,sans-serif;
+  padding-bottom:22px;
+  border-bottom:1px solid rgba(255,255,255,.18);
+}
+
+.competition-promo-panel b:last-child{
+  border-bottom:0;
+  padding-bottom:0;
+}
+
+@media(max-width:900px){
+  .competition-promo{
+    grid-template-columns:1fr;
+    padding:80px 28px;
+  }
+}

@@ -1,0 +1,61 @@
+.app > aside{
+  z-index:20;
+}
+
+.app > aside .logo,
+.logout{
+  flex:0 0 auto;
+}
+
+.app nav{
+  flex:1 1 auto;
+  min-height:0;
+  overflow-y:auto;
+  overflow-x:hidden;
+  padding-right:4px;
+}
+
+.app nav::-webkit-scrollbar{
+  width:6px;
+}
+
+.app nav::-webkit-scrollbar-thumb{
+  background:#42664c;
+  border-radius:999px;
+}
+
+.app nav button{
+  width:100%;
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+
+.logout{
+  margin-top:12px;
+}
+
+@media(max-width:700px){
+  .app > aside{
+    width:86px;
+    padding-inline:12px;
+  }
+
+  .app main{
+    margin-left:86px;
+  }
+
+  .app nav button{
+    justify-content:center;
+    font-size:17px;
+  }
+}
+
+.app main aside,
+.analytics-summary{
+  position:static!important;
+  inset:auto!important;
+  width:auto!important;
+  height:auto!important;
+  z-index:auto!important;
+}

@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Üye Paneli — PEYZAJDER</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="member-portal.cssv=20260714-company">
+</head>
+<body>
+  <aside class="portal-side">
+    <a class="portal-brand" href="index.html"><i>P</i><span>PEYZAJDER<small>Üye Portalı</small></span></a>
+    <nav>
+      <a class="active" href="#application">Dernek üyeliği</a>
+      <a href="#profile">Kişisel bilgilerim</a>
+      <a href="#company">Firma kartım</a>
+      <a href="#companyJobs">İlan taleplerim</a>
+      <a href="archive.html">İçerik merkezi</a>
+      <a href="index.html#rehber">Firma rehberi</a>
+    </nav>
+    <button id="logout">Oturumu kapat</button>
+  </aside>
+  <main class="portal-main">
+    <div id="createdNotice" class="success-notice" hidden>Hesabınız oluşturuldu. Başvuru adımlarına buradan devam edebilirsiniz.</div>
+    <header>
+      <div><small>SİTE ÜYESİ</small><h1 id="hello">Merhaba</h1></div>
+      <span id="status" class="badge">Başvuru yapılmadı</span>
+    </header>
+    <section class="portal-hero">
+      <div>
+        <p class="eyebrow">Dernek üyeliği başvurusu</p>
+        <h2>İmzalı başvurunuzu üç adımda tamamlayın.</h2>
+      </div>
+      <div class="portal-steps">
+        <span><b>1</b> Formu indirin</span>
+        <span><b>2</b> Doldurup imzalayın</span>
+        <span><b>3</b> Sisteme yükleyin</span>
+      </div>
+    </section>
+    <section id="application" class="application-grid">
+      <article>
+        <span class="number">01</span>
+        <h3>Başvuru formunu indirin</h3>
+        <p>Formu bilgisayarınıza indirin, bilgilerinizi doldurun ve ıslak imza ile imzalayın.</p>
+        <a class="portal-button" href="forms/peyzajder-uyelik-basvuru-formu.pdf" download>PDF formunu indir ↓</a>
+        <div id="feeInfo" class="fee-info">
+          <h4>Üyelik bedelleri</h4>
+          <p>Tanımlı aidat bilgisi yükleniyor…</p>
+        </div>
+      </article>
+      <article>
+        <span class="number">02</span>
+        <h3>İmzalı formu yükleyin</h3>
+        <p>PDF, JPG veya PNG biçiminde, en fazla 10 MB dosya yükleyebilirsiniz.</p>
+        <form id="uploadForm">
+          <label class="drop"><input id="document" type="file" accept=".pdf,.jpg,.jpeg,.png" required><span id="fileLabel">Dosya seçin veya buraya bırakın</span></label>
+          <label>Üyelik türü<select name="membershipType" id="portalMembershipType"><option>Bireysel</option><option>Kurumsal</option><option>Öğrenci</option></select></label>
+          <label>Kurum / firma<input name="organization"></label>
+          <button class="portal-button">İmzalı formu gönder →</button>
+          <p id="uploadMessage"></p>
+        </form>
+      </article>
+    </section>
+    <section id="profile" class="profile-card">
+      <div>
+        <span class="number">03</span>
+        <h3>Kişisel bilgilerim</h3>
+        <p>İletişim bilgileriniz değişirse buradan güncelleyebilirsiniz.</p>
+      </div>
+      <form id="profileForm" class="profile-form">
+        <label>Ad soyad<input name="name" required></label>
+        <label>Telefon<input name="phone"></label>
+        <label>Şehir<input name="city"></label>
+        <label>Meslek / uzmanlık<input name="profession"></label>
+        <button class="portal-button">Bilgilerimi kaydet →</button>
+        <p id="profileMessage"></p>
+      </form>
+    </section>
+    <section id="company" class="company-card">
+      <div class="company-head">
+        <div><span class="number">04</span><h3>Firma kartım</h3><p>Kurumsal üyeler firma rehberinde görünecek şirket kartını buradan hazırlar. Kart, yönetim veya moderatör onayından sonra yayınlanır.</p></div>
+        <span id="companyStatus" class="badge">Henüz kart yok</span>
+      </div>
+      <form id="companyForm" class="company-form">
+        <label>Firma adı<input name="name" required></label>
+        <label>Logo <input id="companyLogo" type="file" accept="image/*"><small>Logo WebP formatına çevrilir.</small></label>
+        <label>Telefon<input name="phone"></label>
+        <label>E-posta<input name="email" type="email"></label>
+        <label>Web sitesi<input name="website" type="url" placeholder="https://"></label>
+        <label>Şehir<input name="city"></label>
+        <label class="wide">Adres<textarea name="address"></textarea></label>
+        <label class="wide">Firma tanıtımı<textarea name="description"></textarea></label>
+        <div class="wide">
+          <b>Faaliyet alanları</b>
+          <p class="hint">Birden fazla alan seçebilirsiniz. Firma arama şirket adı, şehir ve bu faaliyet alanları üzerinden çalışır.</p>
+          <div id="activityChoices" class="activity-choices"></div>
+        </div>
+        <button class="portal-button">Firma kartını onaya gönder →</button>
+        <p id="companyMessage"></p>
+      </form>
+    </section>
+    <section id="companyJobs" class="company-card">
+      <div class="company-head">
+        <div><span class="number">05</span><h3>Eleman / stajyer ilanı</h3><p>Eleman arama ve stajyer arama ilanları yayınlanmadan önce admin veya moderatör onayına düşer.</p></div>
+      </div>
+      <form id="jobForm" class="company-form compact">
+        <label>İlan başlığı<input name="title" required></label>
+        <label>İlan tipi<select name="type"><option>Eleman arama</option><option>Stajyer arama</option><option>Tam zamanlı</option><option>Yarı zamanlı</option><option>Proje bazlı</option></select></label>
+        <label>Konum<input name="location"></label>
+        <label>Son başvuru<input name="endDate" type="date"></label>
+        <label class="wide">Başvuru bağlantısı<input name="url" type="url" placeholder="https://"></label>
+        <label class="wide">Açıklama<textarea name="description" required></textarea></label>
+        <button class="portal-button">İlanı onaya gönder →</button>
+        <p id="jobMessage"></p>
+      </form>
+      <div id="jobList" class="job-list"></div>
+    </section>
+    <section id="currentApplication" class="current" hidden>
+      <h3>Yüklenen başvuru</h3>
+      <div id="applicationInfo"></div>
+    </section>
+  </main>
+  <script src="member-portal.jsv=20260714-company"></script>
+</body>
+</html>

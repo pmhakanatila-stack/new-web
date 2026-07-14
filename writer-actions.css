@@ -1,0 +1,51 @@
+.writer-list article{
+  align-items:center;
+}
+
+.writer-item-main{
+  min-width:0;
+  flex:1;
+}
+
+.writer-item-main b,
+.writer-item-main small{
+  display:block;
+}
+
+.writer-item-main small{
+  color:#6b766e;
+  margin-top:6px;
+}
+
+.writer-actions{
+  display:flex;
+  gap:8px;
+  margin-left:auto;
+}
+
+.writer-actions button{
+  border:1px solid #ced7cd;
+  background:#f8f9f6;
+  padding:9px 12px;
+  font-weight:800;
+  cursor:pointer;
+}
+
+.writer-actions button:hover{
+  background:#173523;
+  color:white;
+}
+
+.writer-actions button[data-delete]:hover{
+  background:#8b4d32;
+}
+
+@media(max-width:720px){
+  .writer-list article{
+    flex-wrap:wrap;
+  }
+  .writer-actions{
+    width:100%;
+    margin-left:0;
+  }
+}

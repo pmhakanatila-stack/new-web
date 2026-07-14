@@ -1,0 +1,131 @@
+const message=document.querySelector('#uploadMessage');
+const profileMessage=document.querySelector('#profileMessage');
+const companyMessage=document.querySelector('#companyMessage');
+const jobMessage=document.querySelector('#jobMessage');
+const file=document.querySelector('#document');
+const logoInput=document.querySelector('#companyLogo');
+const apiPath=path=>window.peyzajderApiPath?window.peyzajderApiPath(path):path;
+let member,companyLogoData='',memberTypes=[];
+
+const money=n=>(Number(n)||0).toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2})+' ₺';
+const activityGroups={
+  'Tasarım ve Projelendirme':['Peyzaj Mimari Proje Tasarımı','Kentsel Tasarım','Çevre Düzenleme Projeleri','Uygulama Projeleri','3D Görselleştirme ve Animasyon','Keşif, Metraj ve Maliyet Analizi','Master Plan Hazırlama','Rekreasyon Alanı Tasarımı','Park ve Bahçe Tasarımı','Çatı ve Teras Bahçesi Tasarımı','Dikey Bahçe Tasarımı'],
+  'Peyzaj Uygulama':['Park Yapımı','Bahçe Düzenleme','Sert Zemin Uygulamaları','Ahşap Yapılar (Pergola, Kamelya vb.)','Çocuk Oyun Alanı Yapımı','Spor Sahası Yapımı','Kent Mobilyaları Montajı','Sulak Alan ve Gölet Yapımı','Yapısal Peyzaj Uygulamaları'],
+  'Bitkisel Üretim':['Fidan Üretimi','Ağaç Yetiştiriciliği','Çalı Üretimi','Yer Örtücü Bitki Üretimi','Mevsimlik Çiçek Üretimi','Çok Yıllık Bitki Üretimi','Süs Bitkileri Üretimi','İç Mekân Bitkisi Üretimi','Palmiyeler ve Egzotik Bitkiler','Tohum Üretimi','Çelik ve Fide Üretimi'],
+  'Çim ve Yer Örtücü Sistemleri':['Rulo Çim Üretimi','Hazır Çim Uygulaması','Çim Tohumu Satışı','Spor Sahası Çimi','Hibrit Çim Sistemleri','Hidroseeding (Hidrolik Çim Ekimi)','Yer Örtücü Bitki Uygulamaları'],
+  'Sulama Sistemleri':['Otomatik Sulama Sistemleri','Tarımsal Sulama Sistemleri','Damla Sulama','Yağmurlama Sulama','Akıllı Sulama Otomasyonu','Sulama Projelendirme','Sulama Montajı','Sulama Bakım ve Onarımı','Pompa ve Filtrasyon Sistemleri'],
+  'Peyzaj Bakım Hizmetleri':['Bahçe Bakımı','Çim Bakımı','Ağaç Budama','Çalı Budama','Gübreleme','İlaçlama','Yabancı Ot Mücadelesi','Mevsimlik Çiçek Dikimi','Bitki Yenileme','Sulama Bakımı'],
+  'Su Yapıları':['Süs Havuzu','Yapay Gölet','Şelale Sistemleri','Biyolojik Göletler','Fıskiye Sistemleri','Havuz Bakımı'],
+  'Çevre ve Altyapı':['Erozyon Kontrolü','Rehabilitasyon Çalışmaları','Yeşil Alan Tesisi','Karayolu Peyzajı','Endüstriyel Peyzaj','Maden Sahası Rehabilitasyonu','Çevre Düzenleme'],
+  'Donatı ve Yapısal Ürünler':['Kent Mobilyaları','Ahşap Donatı Üretimi','Çocuk Oyun Grupları','Spor Ekipmanları','Çit ve Panel Sistemleri','Saksı Üretimi','Peyzaj Aydınlatması'],
+  'Satış ve Tedarik':['Bitki Satışı','Peyzaj Malzemeleri Satışı','Saksı ve Donatı Satışı','Gübre Satışı','Bitki Koruma Ürünleri','Sulama Ekipmanları Satışı','Çim Tohumu Satışı','Toprak ve Torf Satışı','Malç ve Dekoratif Taş Satışı'],
+  'Danışmanlık ve Teknik Hizmetler':['Peyzaj Danışmanlığı','Kontrollük Hizmetleri','Teknik Müşavirlik','İhale Danışmanlığı','Bilirkişilik','Eğitim Hizmetleri','Yeşil Bina (LEED/BREEAM) Danışmanlığı']
+};
+
+function renderActivities(selected=[]){
+  const box=document.querySelector('#activityChoices');
+  const chosen=new Set(selected||[]);
+  box.innerHTML=Object.entries(activityGroups).map(([group,items])=>`
+    <details class="activity-group" open>
+      <summary>${group}</summary>
+      <div>${[group,...items].map(name=>`<label><input type="checkbox" value="${name.replace(/"/g,'&quot;')}" ${chosen.has(name)?'checked':''}> ${name}</label>`).join('')}</div>
+    </details>`).join('');
+}
+
+async function loadMemberTypes(selected){
+  const select=document.querySelector('#portalMembershipType');
+  if(!select)return;
+  try{
+    const types=await fetch(apiPath('/api/public/member-types'),{cache:'no-store'}).then(r=>r.json());
+    if(Array.isArray(types)&&types.length){
+      memberTypes=types;
+      select.innerHTML=types.map(t=>`<option value="${String(t.title||'').replace(/"/g,'&quot;')}">${t.title}</option>`).join('');
+    }
+    if(selected)select.value=selected;
+    select.onchange=()=>renderFees({...member.finance,category:select.value,entryFee:Number(memberTypes.find(t=>t.title===select.value).entryFee)||0});
+    select.onchange();
+  }catch{if(selected)select.value=selected}
+}
+
+function fillProfile(d){
+  const form=document.querySelector('#profileForm');
+  form.name.value=d.name||'';form.phone.value=d.phone||'';form.city.value=d.city||'';form.profession.value=d.profession||'';
+}
+
+function renderFees(finance={}){
+  const tariff=finance.currentTariff,entry=Number(finance.entryFee)||0;
+  document.querySelector('#feeInfo').innerHTML=`<h4>Üyelik bedelleri</h4>
+    <div class="fee-row"><span>Üye kategorisi</span><b>${finance.category||'Genel'}</b></div>
+    <div class="fee-row"><span>Tanımlı aidat</span><b>${tariff?`${money(tariff.amount)} / ${tariff.frequency||'dönem'}`:'Henüz tarife tanımlanmadı'}</b></div>
+    <div class="fee-row warning"><span>?yelik giri? bedeli</span><b>${entry?money(entry):'Hen?z tan?mlanmad?'}</b></div>
+    <small>Giriş bedeli tek seferliktir. Aidat ve giriş bedeli sayman panelindeki tanımlardan otomatik okunur.</small>`;
+}
+
+function fillCompany(company={}){
+  const f=document.querySelector('#companyForm');
+  ['name','phone','email','website','city','address','description'].forEach(k=>{if(f[k])f[k].value=company[k]||''});
+  companyLogoData=company.logo||company.image||'';
+  document.querySelector('#companyStatus').textContent=company.status||'Henüz kart yok';
+  renderActivities(Array.isArray(company.activities)?company.activities:String(company.activities||company.specialty||'').split(/[,;\n]/).map(x=>x.trim()).filter(Boolean));
+}
+
+function renderJobs(jobs=[]){
+  const box=document.querySelector('#jobList');
+  box.innerHTML=jobs.length?`<h4>İlan taleplerim</h4>${jobs.map(j=>`<div class="job-row"><b>${j.title}</b><span>${j.type||'İlan'} · ${j.location||''}</span><em>${j.status||'Onay bekliyor'}</em></div>`).join('')}`:'<p class="hint">Henüz ilan talebiniz yok.</p>';
+}
+
+async function loadJobs(){
+  try{const r=await fetch(apiPath('/api/member/jobs'),{credentials:'same-origin'});renderJobs(await r.json())}catch{}
+}
+
+async function load(){
+  const r=await fetch(apiPath('/api/member/me'),{credentials:'same-origin'});
+  const d=await r.json();
+  if(!r.ok)return location.href='member-login.html';
+  member=d;
+  document.querySelector('#hello').textContent=`Merhaba, ${d.name||d.email}`;
+  document.querySelector('#status').textContent=d.membershipStatus||'Site üyesi';
+  loadMemberTypes(d.application.membershipType||d.membershipType||d.finance.category);
+  fillProfile(d);renderFees(d.finance||{});fillCompany(d.company||{email:d.email,phone:d.phone,city:d.city,name:d.application.organization||''});loadJobs();
+  if(!d.isCorporate){
+    companyMessage.textContent='Firma kartı ve ilan gönderimi için üyelik başvurusunda “Kurumsal” türünü seçmelisiniz.';
+  }
+  if(new URLSearchParams(location.search).get('created')){document.querySelector('#createdNotice').hidden=false;history.replaceState({},'',location.pathname)}
+  if(d.application){document.querySelector('#currentApplication').hidden=false;document.querySelector('#applicationInfo').innerHTML=`<b>${d.application.documentName||'İmzalı başvuru formu'}</b><span>${d.application.status}</span><a href="${d.application.documentUrl}" target="_blank">Belgeyi görüntüle</a>`}
+}
+
+function imageToWebp(input,max=900){
+  return new Promise((resolve,reject)=>{
+    const f=input.files?.[0];if(!f)return resolve('');
+    const img=new Image(),reader=new FileReader();
+    reader.onload=()=>{img.onload=()=>{const scale=Math.min(1,max/Math.max(img.width,img.height)),canvas=document.createElement('canvas');canvas.width=Math.round(img.width*scale);canvas.height=Math.round(img.height*scale);canvas.getContext('2d').drawImage(img,0,0,canvas.width,canvas.height);resolve(canvas.toDataURL('image/webp',.84))};img.onerror=reject;img.src=reader.result};
+    reader.onerror=reject;reader.readAsDataURL(f);
+  });
+}
+
+file.addEventListener('change',()=>document.querySelector('#fileLabel').textContent=file.files[0].name||'Dosya seçin');
+logoInput.addEventListener('change',async()=>{companyMessage.textContent='Logo WebP formatına hazırlanıyor…';companyLogoData=await imageToWebp(logoInput);companyMessage.textContent='Logo hazır. Kaydedince onaya gönderilecek.'});
+
+document.querySelector('#uploadForm').addEventListener('submit',async e=>{
+  e.preventDefault();if(!file.files[0])return;message.textContent='Belgeniz yükleniyor…';
+  const reader=new FileReader();reader.onload=async()=>{try{const form=Object.fromEntries(new FormData(e.target));form.data=reader.result;form.name=file.files[0].name;const r=await fetch(apiPath('/api/member/application'),{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify(form)});const d=await r.json();if(!r.ok)throw new Error(d.error);message.textContent='İmzalı başvurunuz yönetim paneline iletildi.';load()}catch(x){message.textContent=x.message}};reader.readAsDataURL(file.files[0]);
+});
+
+document.querySelector('#profileForm').addEventListener('submit',async e=>{
+  e.preventDefault();profileMessage.textContent='Bilgileriniz kaydediliyor…';
+  try{const data=Object.fromEntries(new FormData(e.target));const r=await fetch(apiPath('/api/member/profile'),{method:'PUT',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify(data)});const d=await r.json();if(!r.ok)throw new Error(d.error||'Bilgiler kaydedilemedi');profileMessage.textContent='Kişisel bilgileriniz güncellendi.';await load()}catch(x){profileMessage.textContent=x.message}
+});
+
+document.querySelector('#companyForm').addEventListener('submit',async e=>{
+  e.preventDefault();companyMessage.textContent='Firma kartı onaya gönderiliyor…';
+  try{const data=Object.fromEntries(new FormData(e.target));data.logo=companyLogoData;data.activities=[...document.querySelectorAll('#activityChoices input:checked')].map(x=>x.value);const r=await fetch(apiPath('/api/member/company'),{method:'PUT',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify(data)});const d=await r.json();if(!r.ok)throw new Error(d.error||'Firma kartı kaydedilemedi');companyMessage.textContent='Firma kartınız onaya gönderildi.';fillCompany(d)}catch(x){companyMessage.textContent=x.message}
+});
+
+document.querySelector('#jobForm').addEventListener('submit',async e=>{
+  e.preventDefault();jobMessage.textContent='İlan talebi gönderiliyor…';
+  try{const data=Object.fromEntries(new FormData(e.target));data.company=document.querySelector('#companyForm').name.value||member.application.organization||member.name;const r=await fetch(apiPath('/api/member/jobs'),{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify(data)});const d=await r.json();if(!r.ok)throw new Error(d.error||'İlan gönderilemedi');jobMessage.textContent='İlan talebiniz onaya gönderildi.';e.target.reset();loadJobs()}catch(x){jobMessage.textContent=x.message}
+});
+
+document.querySelector('#logout').onclick=async()=>{await fetch(apiPath('/api/member/logout'),{credentials:'same-origin'});location.href='member-login.html'};
+document.querySelectorAll('.portal-side nav a[href^="#"]').forEach(a=>a.onclick=()=>{document.querySelectorAll('.portal-side nav a').forEach(x=>x.classList.remove('active'));a.classList.add('active')});
+renderActivities();load();

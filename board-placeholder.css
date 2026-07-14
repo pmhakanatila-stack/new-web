@@ -1,0 +1,46 @@
+.portrait.placeholder{
+  position:relative;
+  min-height:100%;
+  overflow:hidden;
+  background:
+    radial-gradient(circle at 50% 32%,rgba(189,214,110,.28) 0 24%,transparent 25%),
+    linear-gradient(145deg,#dfe9df,#b9cbb8);
+}
+
+.portrait.placeholder:before{
+  content:"";
+  width:58px;
+  height:58px;
+  border-radius:50%;
+  background:#f6f8f2;
+  box-shadow:0 78px 0 34px #f6f8f2;
+  opacity:.92;
+  transform:translateY(-42px);
+}
+
+.portrait.placeholder:after{
+  content:"PEYZAJDER";
+  position:absolute;
+  bottom:26px;
+  left:50%;
+  transform:translateX(-50%);
+  color:#456c51;
+  font:700 9px Manrope,sans-serif;
+  letter-spacing:.15em;
+  opacity:.7;
+}
+
+.portrait.placeholder span{
+  position:absolute;
+  top:18px;
+  right:15px;
+  width:34px;
+  height:34px;
+  display:grid;
+  place-items:center;
+  border-radius:50%;
+  background:#173523;
+  color:#bdd66e;
+  font:700 10px Manrope,sans-serif;
+  letter-spacing:.04em;
+}

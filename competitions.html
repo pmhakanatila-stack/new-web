@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Yarışmalar — PEYZAJDER</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="archive.css">
+  <link rel="stylesheet" href="competition-contact.cssv=20260713-sponsor-panel">
+</head>
+<body class="archive-body competitions-body">
+  <header class="archive-header">
+    <a class="brand" href="index.html"><span class="brand-mark">P</span><span><strong>PEYZAJDER</strong><small>Peyzaj Mimarları ve Sektör Profesyonelleri Derneği</small></span></a>
+    <nav><a href="index.html">Ana sayfa</a><a href="contact.html">İletişim</a><a href="https://peyzajder.com" target="_blank" rel="noopener">Dijital Yarışma Platformu</a></nav>
+  </header>
+  <main>
+    <section class="archive-hero competition-hero">
+      <p class="eyebrow">PEYZAJDER yarışmaları</p>
+      <h1>Dijital yarışma platformu,<br><em>dernek sitesinde görünür.</em></h1>
+      <p>Aktif yarışmalar, sonuçlar ve tamamlanan yarışmalar peyzajder.com platformundan otomatik alınır.</p>
+      <div class="competition-actions">
+        <a class="button button-light" href="https://peyzajder.com" target="_blank" rel="noopener">Dijital Yarışma Platformuna Git →</a>
+        <a class="text-link" href="#active">Aktif yarışmaları gör</a>
+      </div>
+    </section>
+
+    <section class="competition-status" id="competitionStatus">Yarışma platformu kontrol ediliyor…</section>
+
+    <section class="competition-sponsors" id="competitionSponsors" hidden>
+      <div class="section-head">
+        <div><p class="eyebrow">Sponsorlar</p><h2>Yarışma destekçileri</h2></div>
+      </div>
+      <div id="competitionSponsorGroups" class="sponsor-groups"></div>
+    </section>
+
+    <section class="competition-section" id="active">
+      <div class="section-head"><div><p class="eyebrow">01 · Aktif</p><h2>Aktif yarışmalar</h2></div></div>
+      <div class="competition-grid" data-list="active_competitions"></div>
+    </section>
+
+    <section class="competition-section muted-section" id="results">
+      <div class="section-head"><div><p class="eyebrow">02 · Sonuçlar</p><h2>Yarışma sonuçları</h2></div></div>
+      <div class="competition-grid" data-list="result_competitions"></div>
+    </section>
+
+    <section class="competition-section" id="completed">
+      <div class="section-head"><div><p class="eyebrow">03 · Arşiv</p><h2>Tamamlanan yarışmalar</h2></div></div>
+      <div class="competition-grid" data-list="completed_competitions"></div>
+    </section>
+  </main>
+  <script src="competitions.jsv=20260713-sponsor-panel"></script>
+</body>
+</html>
