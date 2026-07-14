@@ -8,6 +8,9 @@ const apiPath=path=>window.peyzajderApiPath?window.peyzajderApiPath(path):path;
 let member,companyLogoData='',memberTypes=[];
 
 const money=n=>(Number(n)||0).toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2})+' ₺';
+const norm=s=>String(s||'').trim().toLocaleLowerCase('tr-TR');
+const isCorporateType=value=>norm(value).includes('kurumsal');
+
 const activityGroups={
   'Tasarım ve Projelendirme':['Peyzaj Mimari Proje Tasarımı','Kentsel Tasarım','Çevre Düzenleme Projeleri','Uygulama Projeleri','3D Görselleştirme ve Animasyon','Keşif, Metraj ve Maliyet Analizi','Master Plan Hazırlama','Rekreasyon Alanı Tasarımı','Park ve Bahçe Tasarımı','Çatı ve Teras Bahçesi Tasarımı','Dikey Bahçe Tasarımı'],
   'Peyzaj Uygulama':['Park Yapımı','Bahçe Düzenleme','Sert Zemin Uygulamaları','Ahşap Yapılar (Pergola, Kamelya vb.)','Çocuk Oyun Alanı Yapımı','Spor Sahası Yapımı','Kent Mobilyaları Montajı','Sulak Alan ve Gölet Yapımı','Yapısal Peyzaj Uygulamaları'],
@@ -22,8 +25,27 @@ const activityGroups={
   'Danışmanlık ve Teknik Hizmetler':['Peyzaj Danışmanlığı','Kontrollük Hizmetleri','Teknik Müşavirlik','İhale Danışmanlığı','Bilirkişilik','Eğitim Hizmetleri','Yeşil Bina (LEED/BREEAM) Danışmanlığı']
 };
 
+function setCorporateArea(visible){
+  document.querySelectorAll('[data-corporate-only]').forEach(el=>{el.hidden=!visible});
+  if(!visible&&['#company','#companyJobs'].includes(location.hash)){
+    history.replaceState({},'',`${location.pathname}#application`);
+    document.querySelector('#application')?.scrollIntoView({block:'start'});
+  }
+}
+
+function toggleOrganizationField(){
+  const select=document.querySelector('#portalMembershipType');
+  const field=document.querySelector('#organizationField');
+  if(!select||!field)return;
+  const show=isCorporateType(select.value);
+  field.hidden=!show;
+  const input=field.querySelector('input');
+  if(input)input.required=show;
+}
+
 function renderActivities(selected=[]){
   const box=document.querySelector('#activityChoices');
+  if(!box)return;
   const chosen=new Set(selected||[]);
   box.innerHTML=Object.entries(activityGroups).map(([group,items])=>`
     <details class="activity-group" open>
@@ -42,14 +64,24 @@ async function loadMemberTypes(selected){
       select.innerHTML=types.map(t=>`<option value="${String(t.title||'').replace(/"/g,'&quot;')}">${t.title}</option>`).join('');
     }
     if(selected)select.value=selected;
-    select.onchange=()=>renderFees({...member.finance,category:select.value,entryFee:Number(memberTypes.find(t=>t.title===select.value).entryFee)||0});
+    select.onchange=()=>{
+      const selectedType=memberTypes.find(t=>t.title===select.value);
+      renderFees({...member?.finance,category:select.value,entryFee:Number(selectedType?.entryFee)||0});
+      toggleOrganizationField();
+    };
     select.onchange();
-  }catch{if(selected)select.value=selected}
+  }catch{
+    if(selected)select.value=selected;
+    toggleOrganizationField();
+  }
 }
 
 function fillProfile(d){
   const form=document.querySelector('#profileForm');
-  form.name.value=d.name||'';form.phone.value=d.phone||'';form.city.value=d.city||'';form.profession.value=d.profession||'';
+  form.name.value=d.name||'';
+  form.phone.value=d.phone||'';
+  form.city.value=d.city||'';
+  form.profession.value=d.profession||'';
 }
 
 function renderFees(finance={}){
@@ -57,7 +89,7 @@ function renderFees(finance={}){
   document.querySelector('#feeInfo').innerHTML=`<h4>Üyelik bedelleri</h4>
     <div class="fee-row"><span>Üye kategorisi</span><b>${finance.category||'Genel'}</b></div>
     <div class="fee-row"><span>Tanımlı aidat</span><b>${tariff?`${money(tariff.amount)} / ${tariff.frequency||'dönem'}`:'Henüz tarife tanımlanmadı'}</b></div>
-    <div class="fee-row warning"><span>?yelik giri? bedeli</span><b>${entry?money(entry):'Hen?z tan?mlanmad?'}</b></div>
+    <div class="fee-row warning"><span>Üyelik giriş bedeli</span><b>${entry?money(entry):'Henüz tanımlanmadı'}</b></div>
     <small>Giriş bedeli tek seferliktir. Aidat ve giriş bedeli sayman panelindeki tanımlardan otomatik okunur.</small>`;
 }
 
@@ -71,11 +103,12 @@ function fillCompany(company={}){
 
 function renderJobs(jobs=[]){
   const box=document.querySelector('#jobList');
+  if(!box)return;
   box.innerHTML=jobs.length?`<h4>İlan taleplerim</h4>${jobs.map(j=>`<div class="job-row"><b>${j.title}</b><span>${j.type||'İlan'} · ${j.location||''}</span><em>${j.status||'Onay bekliyor'}</em></div>`).join('')}`:'<p class="hint">Henüz ilan talebiniz yok.</p>';
 }
 
 async function loadJobs(){
-  try{const r=await fetch(apiPath('/api/member/jobs'),{credentials:'same-origin'});renderJobs(await r.json())}catch{}
+  try{const r=await fetch(apiPath('/api/member/jobs'),{credentials:'same-origin'});if(r.ok)renderJobs(await r.json())}catch{}
 }
 
 async function load(){
@@ -85,13 +118,24 @@ async function load(){
   member=d;
   document.querySelector('#hello').textContent=`Merhaba, ${d.name||d.email}`;
   document.querySelector('#status').textContent=d.membershipStatus||'Site üyesi';
-  loadMemberTypes(d.application.membershipType||d.membershipType||d.finance.category);
-  fillProfile(d);renderFees(d.finance||{});fillCompany(d.company||{email:d.email,phone:d.phone,city:d.city,name:d.application.organization||''});loadJobs();
-  if(!d.isCorporate){
-    companyMessage.textContent='Firma kartı ve ilan gönderimi için üyelik başvurusunda “Kurumsal” türünü seçmelisiniz.';
+  const selectedType=d.application?.membershipType||d.membershipType||d.finance?.category||'Bireysel';
+  await loadMemberTypes(selectedType);
+  fillProfile(d);
+  renderFees(d.finance||{});
+  const showCorporatePanel=!!d.isCorporate;
+  setCorporateArea(showCorporatePanel);
+  if(showCorporatePanel){
+    fillCompany(d.company||{email:d.email,phone:d.phone,city:d.city,name:d.application?.organization||''});
+    loadJobs();
   }
-  if(new URLSearchParams(location.search).get('created')){document.querySelector('#createdNotice').hidden=false;history.replaceState({},'',location.pathname)}
-  if(d.application){document.querySelector('#currentApplication').hidden=false;document.querySelector('#applicationInfo').innerHTML=`<b>${d.application.documentName||'İmzalı başvuru formu'}</b><span>${d.application.status}</span><a href="${d.application.documentUrl}" target="_blank">Belgeyi görüntüle</a>`}
+  if(new URLSearchParams(location.search).get('created')){
+    document.querySelector('#createdNotice').hidden=false;
+    history.replaceState({},'',location.pathname);
+  }
+  if(d.application){
+    document.querySelector('#currentApplication').hidden=false;
+    document.querySelector('#applicationInfo').innerHTML=`<b>${d.application.documentName||'İmzalı başvuru formu'}</b><span>${d.application.status}</span><a href="${d.application.documentUrl}" target="_blank">Belgeyi görüntüle</a>`;
+  }
 }
 
 function imageToWebp(input,max=900){
@@ -103,7 +147,7 @@ function imageToWebp(input,max=900){
   });
 }
 
-file.addEventListener('change',()=>document.querySelector('#fileLabel').textContent=file.files[0].name||'Dosya seçin');
+file.addEventListener('change',()=>document.querySelector('#fileLabel').textContent=file.files[0]?.name||'Dosya seçin');
 logoInput.addEventListener('change',async()=>{companyMessage.textContent='Logo WebP formatına hazırlanıyor…';companyLogoData=await imageToWebp(logoInput);companyMessage.textContent='Logo hazır. Kaydedince onaya gönderilecek.'});
 
 document.querySelector('#uploadForm').addEventListener('submit',async e=>{
@@ -123,9 +167,12 @@ document.querySelector('#companyForm').addEventListener('submit',async e=>{
 
 document.querySelector('#jobForm').addEventListener('submit',async e=>{
   e.preventDefault();jobMessage.textContent='İlan talebi gönderiliyor…';
-  try{const data=Object.fromEntries(new FormData(e.target));data.company=document.querySelector('#companyForm').name.value||member.application.organization||member.name;const r=await fetch(apiPath('/api/member/jobs'),{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify(data)});const d=await r.json();if(!r.ok)throw new Error(d.error||'İlan gönderilemedi');jobMessage.textContent='İlan talebiniz onaya gönderildi.';e.target.reset();loadJobs()}catch(x){jobMessage.textContent=x.message}
+  try{const data=Object.fromEntries(new FormData(e.target));data.company=document.querySelector('#companyForm').name.value||member.application?.organization||member.name;const r=await fetch(apiPath('/api/member/jobs'),{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify(data)});const d=await r.json();if(!r.ok)throw new Error(d.error||'İlan gönderilemedi');jobMessage.textContent='İlan talebiniz onaya gönderildi.';e.target.reset();loadJobs()}catch(x){jobMessage.textContent=x.message}
 });
 
 document.querySelector('#logout').onclick=async()=>{await fetch(apiPath('/api/member/logout'),{credentials:'same-origin'});location.href='member-login.html'};
 document.querySelectorAll('.portal-side nav a[href^="#"]').forEach(a=>a.onclick=()=>{document.querySelectorAll('.portal-side nav a').forEach(x=>x.classList.remove('active'));a.classList.add('active')});
-renderActivities();load();
+setCorporateArea(false);
+renderActivities();
+toggleOrganizationField();
+load();

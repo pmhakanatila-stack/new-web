@@ -15,8 +15,8 @@
     <nav>
       <a class="active" href="#application">Dernek üyeliği</a>
       <a href="#profile">Kişisel bilgilerim</a>
-      <a href="#company">Firma kartım</a>
-      <a href="#companyJobs">İlan taleplerim</a>
+      <a href="#company" data-corporate-only hidden>Firma paneli</a>
+      <a href="#companyJobs" data-corporate-only hidden>İlan taleplerim</a>
       <a href="archive.html">İçerik merkezi</a>
       <a href="index.html#rehber">Firma rehberi</a>
     </nav>
@@ -57,7 +57,7 @@
         <form id="uploadForm">
           <label class="drop"><input id="document" type="file" accept=".pdf,.jpg,.jpeg,.png" required><span id="fileLabel">Dosya seçin veya buraya bırakın</span></label>
           <label>Üyelik türü<select name="membershipType" id="portalMembershipType"><option>Bireysel</option><option>Kurumsal</option><option>Öğrenci</option></select></label>
-          <label>Kurum / firma<input name="organization"></label>
+          <label id="organizationField" hidden>Kurum / firma<input name="organization"></label>
           <button class="portal-button">İmzalı formu gönder →</button>
           <p id="uploadMessage"></p>
         </form>
@@ -78,7 +78,7 @@
         <p id="profileMessage"></p>
       </form>
     </section>
-    <section id="company" class="company-card">
+    <section id="company" class="company-card" data-corporate-only hidden>
       <div class="company-head">
         <div><span class="number">04</span><h3>Firma kartım</h3><p>Kurumsal üyeler firma rehberinde görünecek şirket kartını buradan hazırlar. Kart, yönetim veya moderatör onayından sonra yayınlanır.</p></div>
         <span id="companyStatus" class="badge">Henüz kart yok</span>
@@ -101,7 +101,7 @@
         <p id="companyMessage"></p>
       </form>
     </section>
-    <section id="companyJobs" class="company-card">
+    <section id="companyJobs" class="company-card" data-corporate-only hidden>
       <div class="company-head">
         <div><span class="number">05</span><h3>Eleman / stajyer ilanı</h3><p>Eleman arama ve stajyer arama ilanları yayınlanmadan önce admin veya moderatör onayına düşer.</p></div>
       </div>
@@ -122,6 +122,6 @@
       <div id="applicationInfo"></div>
     </section>
   </main>
-  <script src="member-portal.js?v=20260714-company"></script>
+  <script src="member-portal.js?v=20260714-corporate-panel"></script>
 </body>
 </html>
