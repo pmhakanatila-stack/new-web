@@ -19,7 +19,7 @@ async function initialDb(){
   const db={content:migrated,events:migrated.filter(x=>x.category==='etkinlikler').map(x=>({...x,id:`event-${x.id}`})),boards:[{id:'board-1',title:'Yönetim Kurulu',name:'Fulya AKFİDAN SEVİM',role:'Başkan',status:'Aktif',createdAt:new Date().toISOString()}],members:[],firms:[],activity:[]};for(const c of collections)db[c]=[];await save(db);return db;
 }
 async function save(db){await writeFile(dbFile,JSON.stringify(db,null,2),'utf8')}
-let db=await initialDb();for(const c of collections)db[c]=[];db.activity=[];db.accounts=[];
+let db=await initialDb();for(const c of collections)if(!Array.isArray(db[c]))db[c]=[];if(!Array.isArray(db.activity))db.activity=[];if(!Array.isArray(db.accounts))db.accounts=[];
 const defaultMemberTypes=[['Bireysel',1],['Kurumsal',2],['Öğrenci',3]];
 const earlyNorm=s=>String(s||'').trim().toLocaleLowerCase('tr-TR');
 let memberTypesChanged=false;
