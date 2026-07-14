@@ -50,7 +50,7 @@
 
 .floating-competition-tab span{
   position:absolute;
-  inset:92px 0 18px;
+  inset:98px 0 18px;
   display:flex;
   align-items:center;
   justify-content:center;
@@ -65,7 +65,7 @@
 
 .floating-competition-tab b{
   position:absolute;
-  top:-12px;
+  top:-18px;
   left:50%;
   z-index:4;
   width:70px;
@@ -209,14 +209,14 @@
     min-height:210px;
   }
   .floating-competition-tab span{
-    inset:76px 0 12px;
+    inset:82px 0 12px;
     font-size:10px;
     letter-spacing:.09em;
   }
   .floating-competition-tab b{
     width:54px;
     min-height:54px;
-    top:-8px;
+    top:-14px;
     padding:7px 6px;
     font-size:7.5px;
   }

@@ -251,7 +251,7 @@ async function loadFloatingCompetitionPanel(){
     if(!panel.active)return;
     const esc=s=>String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     const title=panel.title||'Bursa Performans Odaklı Peyzaj Uygulamaları Yarışması';
-    const label=panel.label||title;
+    const badge=panel.label||'Yeni yarışma';
     const body=panel.body||'Aktif yarışma bilgileri, başvuru koşulları ve süreç takvimi dijital yarışma platformunda.';
     const button=panel.buttonText||'TIKLA';
     const url=panel.url||'https://peyzajder.com';
@@ -260,7 +260,7 @@ async function loadFloatingCompetitionPanel(){
     const sponsorUrl=panel.mainSponsorUrl||url;
     document.body.insertAdjacentHTML('beforeend',`
       <aside class="floating-competition is-closed" id="floatingCompetition" aria-label="${esc(title)}">
-        <button class="floating-competition-tab" type="button" aria-expanded="false"><b>Yeni yarışma</b><span>${esc(label)}</span></button>
+        <button class="floating-competition-tab" type="button" aria-expanded="false"><b>${esc(badge)}</b><span>${esc(title)}</span></button>
         <div class="floating-competition-card">
           <small>Dijital yarışma platformu</small>
           <h3>${esc(title)}</h3>
