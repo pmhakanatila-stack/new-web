@@ -240,7 +240,7 @@ async function loadFirmDirectory(){
 loadFirmDirectory();
 
 // Köşe yazıları artık ayrı "Köşe Yazıları" sayfasında yayınlanıyor; ana sayfadaki eski kayan kart kaldırıldı.
-const removeHomeEditorial=()=>document.querySelector('#editorialDrawer').remove();
+const removeHomeEditorial=()=>document.querySelector('#editorialDrawer')?.remove();
 removeHomeEditorial();
 setTimeout(removeHomeEditorial,400);
 setTimeout(removeHomeEditorial,1200);
