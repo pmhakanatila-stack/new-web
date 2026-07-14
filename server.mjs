@@ -24,6 +24,7 @@ async function initialDb(){
 }
 async function save(db){await writeFile(dbFile,JSON.stringify(db,null,2),'utf8')}
 let db=await initialDb();for(const c of collections)if(!Array.isArray(db[c]))db[c]=[];if(!Array.isArray(db.activity))db.activity=[];if(!Array.isArray(db.accounts))db.accounts=[];
+const earlyNorm=s=>String(s||'').trim().toLocaleLowerCase('tr-TR');
 const seedDb=await readJsonFile(join(root,'seed-cms.json'));
 let seedChanged=false;
 if(seedDb&&typeof seedDb==='object'){
@@ -33,10 +34,26 @@ if(seedDb&&typeof seedDb==='object'){
       seedChanged=true;
     }
   }
+  const mergeMissing=(collection,matchFn)=>{
+    if(!Array.isArray(seedDb[collection])||!seedDb[collection].length)return;
+    if(!Array.isArray(db[collection]))db[collection]=[];
+    for(const item of seedDb[collection]){
+      if(!db[collection].some(x=>matchFn(x,item))){
+        db[collection].push(item);
+        seedChanged=true;
+      }
+    }
+  };
+  mergeMissing('sponsorCategories',(x,item)=>earlyNorm(x.title||x.name)===earlyNorm(item.title||item.name));
+  mergeMissing('memberGroups',(x,item)=>earlyNorm(x.title||x.name)===earlyNorm(item.title||item.name));
+  const hasActivePromo=(db.promoPanels||[]).some(x=>!['pasif','taslak','arşiv','arsiv'].includes(earlyNorm(x.status||'Aktif')));
+  if(!hasActivePromo&&Array.isArray(seedDb.promoPanels)&&seedDb.promoPanels.length){
+    db.promoPanels.unshift(seedDb.promoPanels[0]);
+    seedChanged=true;
+  }
 }
 if(seedChanged)await save(db);
 const defaultMemberTypes=[['Bireysel',1],['Kurumsal',2],['Öğrenci',3]];
-const earlyNorm=s=>String(s||'').trim().toLocaleLowerCase('tr-TR');
 let memberTypesChanged=false;
 for(const [title,order] of defaultMemberTypes){
   if(!db.memberGroups.some(g=>earlyNorm(g.title||g.name)===earlyNorm(title))){
