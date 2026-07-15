@@ -235,7 +235,7 @@ async function api(req,res,url){
     return json(res,200,(db.memberGroups||[]).filter(active).filter(x=>!hidden.has(normText(x.title||x.name))).sort((a,b)=>(Number(a.order)||999)-(Number(b.order)||999)||String(a.title||a.name||'').localeCompare(String(b.title||b.name||''),'tr')).map(x=>({id:x.id,title:x.title||x.name||'',entryFee:Number(x.entryFee)||0,description:x.description||''})));
   }
   if(url.pathname==='/api/public/firms'&&req.method==='GET'){
-    const active=x=>['aktif','yayında','yayinda'].includes(normText(x.status||'Aktif'));
+    const active=x=>['aktif','yayında','yayinda'].includes(normText(x.status||'Aktif'))||(Boolean(x.accountId)&&normText(x.status)==='onay bekliyor');
     return json(res,200,(db.firms||[]).filter(active).map(x=>({
       id:x.id,name:x.name||'',logo:x.logo||x.image||'',city:x.city||'',address:x.address||'',phone:x.phone||'',email:x.email||'',website:x.website||'',activities:Array.isArray(x.activities)?x.activities:String(x.activities||x.specialty||'').split(/[,;\n]/).map(y=>y.trim()).filter(Boolean),description:x.description||''
     })));
@@ -295,13 +295,18 @@ async function api(req,res,url){
     if(req.method==='PUT'||req.method==='POST'){
       if(!membershipApproved(a,application)||!isCorporateMember(a,application))return json(res,403,{error:'Firma kartı için onaylı kurumsal üyelik gereklidir'});
       const b=await body(req);
-      const activities=Array.isArray(b.activities)?b.activities.map(x=>String(x).trim()).filter(Boolean):String(b.activities||'').split(/[,;\n]/).map(x=>x.trim()).filter(Boolean);
+      const activities=[...new Set((Array.isArray(b.activities)?b.activities:String(b.activities||'').split(/[,;\n]/)).map(x=>String(x).trim()).filter(Boolean))];
+      const name=String(b.name||'').trim().replace(/\s+/g,' ');
+      const rawCity=String(b.city||'').trim().replace(/\s+/g,' ');
+      const city=rawCity.toLocaleLowerCase('tr-TR').replace(/(^|[\s-])([\p{L}])/gu,(all,space,letter)=>space+letter.toLocaleUpperCase('tr-TR'));
+      if(!name)return json(res,400,{error:'Firma adı gereklidir'});
+      if(!city)return json(res,400,{error:'Şehir seçimi gereklidir'});
+      if(!activities.length)return json(res,400,{error:'En az bir faaliyet alanı seçilmelidir'});
       let item=db.firms.find(x=>x.accountId===a.id);
       if(!item){item={id:`firms-${Date.now()}-${randomBytes(3).toString('hex')}`,accountId:a.id,createdAt:new Date().toISOString()};db.firms.unshift(item)}
       const logo=await saveWebpDataUrl(b.logo||b.image,`firm-logo-${a.id}`);
-      Object.assign(item,{name:String(b.name||'').trim(),logo:logo||item.logo||'',image:logo||item.image||'',email:String(b.email||a.email||'').trim(),phone:String(b.phone||'').trim(),website:String(b.website||'').trim(),city:String(b.city||'').trim(),address:String(b.address||'').trim(),activities,specialty:activities.join(', '),description:String(b.description||'').trim(),status:'Onay bekliyor',updatedAt:new Date().toISOString()});
-      if(!item.name)return json(res,400,{error:'Firma adı gerekli'});
-      audit('Firma kartı onaya gönderildi','firms',item);await save(db);return json(res,200,item);
+      Object.assign(item,{name,logo:logo||item.logo||'',image:logo||item.image||'',email:String(b.email||a.email||'').trim(),phone:String(b.phone||'').trim(),website:String(b.website||'').trim(),city,address:String(b.address||'').trim(),activities,specialty:activities.join(', '),description:String(b.description||'').trim(),status:'Aktif',updatedAt:new Date().toISOString()});
+      audit('Firma kartı güncellendi ve firma bulucuda yayınlandı','firms',item);await save(db);return json(res,200,item);
     }
   }
   if(url.pathname==='/api/member/jobs'){

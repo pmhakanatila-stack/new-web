@@ -107,7 +107,7 @@
     </section>
     <section id="company" class="company-card" data-corporate-only hidden>
       <div class="company-head">
-        <div><span class="number">04</span><h3>Firma kartım</h3><p>Kurumsal üyeler firma rehberinde görünecek şirket kartını buradan hazırlar. Kart, yönetim veya moderatör onayından sonra yayınlanır.</p></div>
+        <div><span class="number">04</span><h3>Firma kartım</h3><p>Firma adı, şehir ve seçtiğiniz hizmetler kaydedildiğinde ana sayfadaki Firma Bulucu alanına otomatik aktarılır.</p></div>
         <span id="companyStatus" class="badge">Henüz kart yok</span>
       </div>
       <form id="companyForm" class="company-form">
@@ -116,7 +116,7 @@
         <label>Telefon<input name="phone"></label>
         <label>E-posta<input name="email" type="email"></label>
         <label>Web sitesi<input name="website" type="url" placeholder="https://"></label>
-        <label>Şehir<input name="city"></label>
+        <label>Şehir<input name="city" autocomplete="address-level2" required><small>Şehir, Firma Bulucu'daki konum seçeneklerine otomatik eklenir.</small></label>
         <label class="wide">Adres<textarea name="address"></textarea></label>
         <label class="wide">Firma tanıtımı<textarea name="description"></textarea></label>
         <div class="wide">
@@ -124,7 +124,7 @@
           <p class="hint">Birden fazla alan seçebilirsiniz. Firma arama şirket adı, şehir ve bu faaliyet alanları üzerinden çalışır.</p>
           <div id="activityChoices" class="activity-choices"></div>
         </div>
-        <button class="portal-button">Firma kartını onaya gönder →</button>
+        <button class="portal-button">Firma kartını kaydet ve yayınla →</button>
         <p id="companyMessage"></p>
       </form>
     </section>
@@ -149,6 +149,6 @@
       <div id="applicationInfo"></div>
     </section>
   </main>
-  <script src="member-portal.js?v=20260715-single-application"></script>
+  <script src="member-portal.js?v=20260715-firm-directory-sync"></script>
 </body>
 </html>

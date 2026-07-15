@@ -257,15 +257,17 @@ async function loadFirmDirectory(){
   if(!box||!q||!city||!activity)return;
   let firms=[];
   try{firms=await fetch(apiPath('/api/public/firms'),{cache:'no-store'}).then(r=>r.json())}catch{firms=[]}
-  const cities=[...new Set(firms.map(x=>x.city).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'tr'));
-  const activities=[...new Set(firms.flatMap(x=>Array.isArray(x.activities)?x.activities:[]).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'tr'));
+  const key=value=>String(value||'').trim().toLocaleLowerCase('tr-TR');
+  const uniqueValues=values=>[...new Map(values.filter(Boolean).map(value=>[key(value),String(value).trim()])).values()].sort((a,b)=>a.localeCompare(b,'tr'));
+  const cities=uniqueValues(firms.map(x=>x.city));
+  const activities=uniqueValues(firms.flatMap(x=>Array.isArray(x.activities)?x.activities:[]));
   city.innerHTML='<option>Tüm şehirler</option>'+cities.map(x=>`<option>${streamEsc(x)}</option>`).join('');
   activity.innerHTML='<option>Tüm uzmanlıklar</option>'+activities.map(x=>`<option>${streamEsc(x)}</option>`).join('');
   const render=()=>{
     const needle=q.value.toLocaleLowerCase('tr'),c=city.value,a=activity.value;
     const shown=firms.filter(f=>{
       const hay=[f.name,f.city,f.address,f.description,(f.activities||[]).join(' ')].join(' ').toLocaleLowerCase('tr');
-      return (!needle||hay.includes(needle))&&(c==='Tüm şehirler'||f.city===c)&&(a==='Tüm uzmanlıklar'||(f.activities||[]).includes(a));
+      return (!needle||hay.includes(needle))&&(c==='Tüm şehirler'||key(f.city)===key(c))&&(a==='Tüm uzmanlıklar'||(f.activities||[]).some(item=>key(item)===key(a)));
     }).slice(0,9);
     box.innerHTML=shown.length?shown.map(f=>`
       <article class="firm-card">

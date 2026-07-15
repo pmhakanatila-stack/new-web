@@ -231,8 +231,11 @@ document.querySelector('#profileForm').addEventListener('submit',async e=>{
 });
 
 document.querySelector('#companyForm').addEventListener('submit',async e=>{
-  e.preventDefault();companyMessage.textContent='Firma kartı onaya gönderiliyor…';
-  try{const data=Object.fromEntries(new FormData(e.target));data.logo=companyLogoData;data.activities=[...document.querySelectorAll('#activityChoices input:checked')].map(x=>x.value);const r=await fetch(apiPath('/api/member/company'),{method:'PUT',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify(data)});const d=await r.json();if(!r.ok)throw new Error(d.error||'Firma kartı kaydedilemedi');companyMessage.textContent='Firma kartınız onaya gönderildi.';fillCompany(d)}catch(x){companyMessage.textContent=x.message}
+  e.preventDefault();
+  const activities=[...document.querySelectorAll('#activityChoices input:checked')].map(x=>x.value);
+  if(!activities.length){companyMessage.textContent='Firma Bulucu için en az bir faaliyet alanı seçin.';return}
+  companyMessage.textContent='Firma kartı kaydediliyor…';
+  try{const data=Object.fromEntries(new FormData(e.target));data.logo=companyLogoData;data.activities=activities;const r=await fetch(apiPath('/api/member/company'),{method:'PUT',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify(data)});const d=await r.json();if(!r.ok)throw new Error(d.error||'Firma kartı kaydedilemedi');companyMessage.textContent='Firma kartınız yayınlandı ve Firma Bulucu alanına eklendi.';fillCompany(d)}catch(x){companyMessage.textContent=x.message}
 });
 
 document.querySelector('#jobForm').addEventListener('submit',async e=>{
