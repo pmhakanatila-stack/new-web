@@ -152,6 +152,15 @@ function publicContentItem(x,type='Gündem'){
 }
 
 async function api(req,res,url){
+  if(url.pathname==='/api/public/site-config'&&req.method==='GET'){
+    const visible=x=>!['Pasif','Taslak','Arşiv'].includes(String(x.status||'Aktif'));
+    const settings=Object.fromEntries((db.settings||[]).filter(visible).map(x=>[String(x.key||x.title||''),String(x.value||'')]).filter(([key,value])=>key&&value));
+    const socialLinks=(db.socialLinks||[]).filter(x=>visible(x)&&String(x.url||'').trim()).map(({id,title,platform,url,status})=>({id,title,platform,url,status:'Aktif'}));
+    const now=new Date(),day=now.toISOString().slice(0,10);
+    const popup=(db.popups||[]).filter(visible).filter(x=>(!x.startDate||x.startDate<=day)&&(!x.endDate||x.endDate>=day)).sort((a,b)=>new Date(b.updatedAt||b.createdAt||0)-new Date(a.updatedAt||a.createdAt||0))[0]||null;
+    const modules=(db.modules||[]).map(({key,title,status})=>({key,title,status:status||'Aktif'}));
+    return json(res,200,{settings,socialLinks,popup:popup?{id:popup.id,title:popup.title||'',body:popup.body||popup.description||'',startDate:popup.startDate||'',endDate:popup.endDate||''}:null,modules});
+  }
   if(url.pathname==='/api/public/home'&&req.method==='GET'){
     const cleanText=v=>String(v||'').replace(/var\s+approachingEvent;/gi,'').replace(/var\s+content_slider;/gi,'').replace(/google-site-verification=[^\s]+/gi,'').replace(/Çağrı Merkezi\s*\d[\d\s]+/gi,'').replace(/YÖNETİM Başkanın Mesajları/gi,'').replace(/DERNEK ve ÜYELER Hakkımızda Banka Hesap Numaralarımız/gi,'').replace(/DERNEK[\s\S]{0,120}Banka Hesap Numaralar[ıi]*m[ıi]*z/gi,'').replace(/Adres\s*:\s*Alaaddinbey Mah\.[\s\S]*Bursa/gi,'').replace(/E-Posta\s*:\s*bilgi@peyzajder\.org/gi,'').replace(/Güncel haberler, duyurular ve ihalelerden anında haberdar ol/gi,'').replace(/Bu internet sitesinde sizlere daha iyi hizmet sunulabilmesi için çerezler kullanılmaktadır\./gi,'').replace(/\s+/g,' ').trim();
     const detailUrl=x=>`content-detail.html?id=${encodeURIComponent(x.id||'')}`;

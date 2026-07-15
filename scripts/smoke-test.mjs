@@ -17,6 +17,11 @@ try{
   const login=await request('/api/login',{method:'POST',body:{username:'smoke-admin',password:'Smoke!2026'}}),adminCookie=login.cookie;
   for(const collection of ['content','events','boards','members','firms','applications','dues','articles','sponsors','users','invitations','memberMessages']){const result=await request(`/api/${collection}`,{cookie:adminCookie});if(!Array.isArray(result.data))throw new Error(`${collection} liste değil`)}
   const title='UTF-8 doğrulama: Çığ, ıhlamur, öğrenci ve şüphe';
+  await request('/api/settings',{method:'POST',cookie:adminCookie,body:{key:'site.name',title:'Site kısa adı',value:'PEYZAJDER TEST',status:'Aktif'}});
+  await request('/api/socialLinks',{method:'POST',cookie:adminCookie,body:{title:'Instagram',platform:'instagram',url:'https://instagram.com/peyzajder',status:'Aktif'}});
+  await request('/api/modules',{method:'POST',cookie:adminCookie,body:{key:'showcase',title:'Sponsor ve ilanlar',status:'Pasif'}});
+  const siteConfig=await request('/api/public/site-config');
+  if(siteConfig.data.settings['site.name']!=='PEYZAJDER TEST'||siteConfig.data.socialLinks.length!==1||siteConfig.data.modules.find(x=>x.key==='showcase')?.status!=='Pasif')throw new Error('Site özelleştirme ayarları ziyaretçi API’sine yansımadı');
   const created=await request('/api/content',{method:'POST',cookie:adminCookie,body:{title,category:'haberler',summary:'Türkçe içerik',body:'İçerik metni',status:'Yayında'}});
   const item=await request(`/api/content/${created.data.id}`,{cookie:adminCookie});if(item.data.title!==title)throw new Error('Türkçe içerik korunmadı');
   const email=`smoke-${Date.now()}@example.test`;
@@ -38,5 +43,5 @@ try{
   const individualApproved=await request('/api/member/me',{cookie:individualCookie});if(!individualApproved.data.membershipApproved||individualApproved.data.panelType!=='member'||individualApproved.data.isCorporate)throw new Error('Bireysel/öğrenci panel yönlendirmesi hatalı');
   await stop();start(port+1);await ready();
   const persisted=JSON.parse(await readFile(join(temp,'cms.json'),'utf8'));if(!persisted.content.some(x=>x.title===title))throw new Error('Sunucu yeniden başlayınca veri kayboldu');
-  console.log('API, üyelik onayı, bireysel/kurumsal panel ayrımı, davetiye, mesajlaşma, Türkçe veri ve yeniden başlatma testi başarılı.');
+  console.log('API, site özelleştirme, üyelik onayı, bireysel/kurumsal panel ayrımı, davetiye, mesajlaşma, Türkçe veri ve yeniden başlatma testi başarılı.');
 }finally{await stop();await rm(temp,{recursive:true,force:true})}

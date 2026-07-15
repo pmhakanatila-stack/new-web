@@ -74,12 +74,12 @@ const adminFlowOrder=[
   ['notifications','Bildirim y\u00f6netimi','07 \u0130LET\u0130\u015e\u0130M','\u2662'],
   ['supportTickets','Destek talepleri','07 \u0130LET\u0130\u015e\u0130M',''],
   ['surveys','Anketler','07 \u0130LET\u0130\u015e\u0130M','\u2611'],
+  ['socialLinks','Sosyal medya','07 \u0130LET\u0130\u015e\u0130M','\u2301'],
   ['menus','Men\u00fc y\u00f6netimi','08 S\u0130TE AYARLARI','\u2261'],
-  ['popups','A\u00e7\u0131l\u0131r pencereler','08 S\u0130TE AYARLARI','\u25a2'],
-  ['socialLinks','Sosyal medya','08 S\u0130TE AYARLARI','\u2301'],
+  ['popups','Duyuru penceresi','08 S\u0130TE AYARLARI','\u25a2'],
   ['settings','Site ayarlar\u0131','08 S\u0130TE AYARLARI','\u2699'],
   ['users','Site yönetimi kullanıcıları','08 S\u0130TE AYARLARI','\u265c'],
-  ['modules','Mod\u00fcller','08 S\u0130TE AYARLARI','\u25c8']
+  ['modules','Ana sayfa b\u00f6l\u00fcmleri','08 S\u0130TE AYARLARI','\u25c8']
 ];
 
 adminFlowOrder.forEach(([key,label,group,icon])=>{if(modules[key])modules[key]=[label,group,icon];else if(['siteMap','homeSettings','news','notices'].includes(key))modules[key]=[label,group,icon]});
@@ -102,6 +102,30 @@ const homeSettingDefs=[
   ['home.directory.title','Firma rehberi ba\u015fl\u0131k','Projeniz i\u00e7in do\u011fru uzman\u0131 bulun.'],
   ['home.showcase.title','Sponsor / ilan alan\u0131 ba\u015fl\u0131k','Destek\u00e7iler, ilanlar ve profesyonel a\u011f'],
   ['home.membership.title','\u00dcyelik alan\u0131 ba\u015fl\u0131k','Mesle\u011fin gelece\u011fine katk\u0131 sunan toplulu\u011fa kat\u0131l\u0131n.']
+];
+
+const siteSettingDefs=[
+  ['site.name','Site kısa adı','PEYZAJDER','text'],
+  ['site.organization','Derneğin tam adı','Peyzaj Mimarları ve Sektör Profesyonelleri Derneği','text'],
+  ['site.browserTitle','Tarayıcı başlığı','PEYZAJDER — Peyzaj Mimarları ve Sektör Profesyonelleri Derneği','text'],
+  ['site.description','SEO açıklaması','Peyzaj mimarlığı, sürdürülebilirlik ve sektör profesyonelleri için ortak platform.','textarea'],
+  ['site.logo','Site logosu','assets/peyzajder-logo.png','image'],
+  ['site.favicon','Tarayıcı ikonu','assets/peyzajder-logo.png','image'],
+  ['home.hero.image','Ana sayfa kapak görseli','assets/hero-landscape-award.png','image'],
+  ['contact.phone','Telefon','+90 536 451 81 00','text'],
+  ['contact.email','E-posta','bilgi@peyzajder.org','email'],
+  ['contact.address','Adres','Alaaddinbey Mah. Taşlıpare Sk. No:69 Nilüfer / Bursa','textarea']
+];
+const socialPlatforms=[
+  ['Instagram','instagram'],['Facebook','facebook'],['LinkedIn','linkedin'],['YouTube','youtube'],['X / Twitter','x'],['Pinterest','pinterest']
+];
+const homeModuleDefs=[
+  ['gundem','PEYZAJDER Gündemi','Slayt, haber, etkinlik ve duyuru akışı'],
+  ['competition','Dijital yarışma alanı','Yarışma platformu tanıtım bölümü'],
+  ['corporate','Kurumsal tanıtım','Hakkımızda ve odak alanları'],
+  ['directory','Firma rehberi','Onaylı üye firma arama alanı'],
+  ['showcase','Sponsor ve ilanlar','Destekçiler, kariyer ve profesyonel ağ'],
+  ['membership','Üyelik çağrısı','Ana sayfanın üyelik başvuru alanı']
 ];
 
 function roleCanSee(view){return currentRole==='admin'||view==='siteMap'||(uiAccess[currentRole]&&uiAccess[currentRole].has(view))}
@@ -528,7 +552,8 @@ const moduleAdminMeta={
   invitations:{area:'\u0130LET\u0130\u015e\u0130M / \u00dcYE DAVET\u0130YELER\u0130',title:'Etkinlik davetiyelerini y\u00f6netin',desc:'Onayl\u0131 bireysel, \u00f6\u011frenci ve kurumsal \u00fcyelere panel i\u00e7inden g\u00f6r\u00fcnecek davetiyeler haz\u0131rlay\u0131n.',steps:['Hedef \u00fcye grubunu se\u00e7in','Etkinlik metni, tarih ve konumu girin','Aktif davetiyeler ilgili \u00fcye panellerinde g\u00f6r\u00fcn\u00fcr'],related:['events','members','memberMessages'],preview:'member-portal.html'},
   memberMessages:{area:'\u0130LET\u0130\u015e\u0130M / \u00dcYE MESAJLARI',title:'\u00dcyelerle mesajla\u015f\u0131n',desc:'Onayl\u0131 \u00fcyelerin panellerinden g\u00f6nderdi\u011fi mesajlar\u0131 okuyun ve do\u011frudan ayn\u0131 hesaba yan\u0131t verin.',steps:['Yeni mesajlar\u0131 listeden a\u00e7\u0131n','Yan\u0131tla ile hesap bilgilerini otomatik doldurun','Yan\u0131t \u00fcye panelindeki mesaj ge\u00e7mi\u015finde g\u00f6r\u00fcn\u00fcr'],related:['members','invitations'],preview:'member-portal.html'},
   menus:{area:'S\u0130TE AYARLARI / MEN\u00dc',title:'Site men\u00fcs\u00fcn\u00fc y\u00f6netin',desc:'\u00dcst men\u00fc, a\u00e7\u0131l\u0131r men\u00fc ve sayfa ba\u011flant\u0131lar\u0131 bu mod\u00fclden d\u00fczenlenir.',steps:['Parent alan\u0131 a\u00e7\u0131l\u0131r men\u00fc i\u00e7in kullan\u0131l\u0131r','S\u0131ra alan\u0131 men\u00fc dizilimini belirler','Bozuk linkleri yay\u0131na almadan kontrol edin'],related:['content','settings'],preview:'index.html'},
-  settings:{area:'S\u0130TE AYARLARI / GENEL',title:'Genel site ayarlar\u0131',desc:'Site ad\u0131, ileti\u015fim bilgileri, ana sayfa metinleri ve sistemsel k\u00fc\u00e7\u00fck ayarlar burada tutulur.',steps:['Ayar anahtar\u0131n\u0131 de\u011fi\u015ftirmeden de\u011feri g\u00fcncelleyin','\u0130leti\u015fim bilgilerini burada tekille\u015ftirin','Canl\u0131ya almadan \u00f6nce kritik ayarlar\u0131 kontrol edin'],related:['menus','socialLinks','bankAccounts'],preview:'index.html'}
+  settings:{area:'S\u0130TE AYARLARI / GENEL',title:'Genel site ayarlar\u0131',desc:'Site ad\u0131, ileti\u015fim bilgileri, ana sayfa metinleri ve sistemsel k\u00fc\u00e7\u00fck ayarlar burada tutulur.',steps:['Ayar anahtar\u0131n\u0131 de\u011fi\u015ftirmeden de\u011feri g\u00fcncelleyin','\u0130leti\u015fim bilgilerini burada tekille\u015ftirin','Canl\u0131ya almadan \u00f6nce kritik ayarlar\u0131 kontrol edin'],related:['menus','socialLinks','bankAccounts'],preview:'index.html'},
+  popups:{area:'S\u0130TE AYARLARI / DUYURU PENCERES\u0130',title:'Ziyaret\u00e7iye a\u00e7\u0131lan duyuru pencereleri',desc:'\u00d6nemli etkinlik, bak\u0131m veya genel kurul duyurusu gerekti\u011finde ana sayfa a\u00e7\u0131l\u0131rken tek bir pencere g\u00f6sterir. Kay\u0131t yoksa veya durum Pasif ise sitede hi\u00e7bir pencere a\u00e7\u0131lmaz.',steps:['Ba\u015fl\u0131k ve k\u0131sa duyuru metnini girin','Ba\u015flang\u0131\u00e7 ve biti\u015f tarihini belirleyin','Yaln\u0131zca gerekti\u011finde Aktif yap\u0131n'],related:['settings','notifications'],preview:'index.html'}
 };
 
 function smartMeta(view){return moduleAdminMeta[view]||{area:modules[view]?.[1]||'Y\u00d6NET\u0130M',title:`${modules[view]?.[0]||'Mod\u00fcl'} kay\u0131tlar\u0131`,desc:'Bu b\u00f6l\u00fcmde ilgili site ve y\u00f6netim kay\u0131tlar\u0131 listelenir, d\u00fczenlenir ve yay\u0131na haz\u0131rlan\u0131r.',steps:['Kay\u0131tlar\u0131 listeden kontrol edin','Yeni kay\u0131t ile ekleme yap\u0131n','Durum alan\u0131yla yay\u0131n/aktiflik kontrol\u00fc sa\u011flay\u0131n'],related:['siteMap'],preview:'index.html'}};
@@ -630,6 +655,21 @@ $('#editorForm').onsubmit=async e=>{
     try{await api(state.edit?`menus/${state.edit.id}`:'menus',{method:state.edit?'PUT':'POST',body:JSON.stringify({...state.edit,...data})});$('#editor').close();toast('Menü kaydedildi');renderMenusManager()}catch(x){toast(x.message)}
     return;
   }
+  if(state.view==='settings'&&state.siteSettingKey){
+    e.preventDefault();const data=Object.fromEntries(new FormData(e.target));
+    try{await api(state.edit?`settings/${state.edit.id}`:'settings',{method:state.edit?'PUT':'POST',body:JSON.stringify({...state.edit,...data,key:state.siteSettingKey,status:'Aktif'})});$('#editor').close();state.siteSettingKey='';toast('Site ayarı kaydedildi');renderSiteSettingsManager()}catch(x){toast(x.message)}
+    return;
+  }
+  if(state.view==='socialLinks'&&state.socialPlatform){
+    e.preventDefault();const data=Object.fromEntries(new FormData(e.target));data.title=state.socialPlatform;data.platform=norm(state.socialPlatform).replace(/\s*\/\s*/g,'-');data.status=data.url?'Aktif':'Pasif';
+    try{await api(state.edit?`socialLinks/${state.edit.id}`:'socialLinks',{method:state.edit?'PUT':'POST',body:JSON.stringify({...state.edit,...data})});$('#editor').close();state.socialPlatform='';toast(data.url?'Sosyal hesap yayına alındı':'Sosyal hesap pasif yapıldı');renderSocialManager()}catch(x){toast(x.message)}
+    return;
+  }
+  if(state.view==='users'){
+    e.preventDefault();const data=Object.fromEntries(new FormData(e.target));
+    try{await api(state.edit?`users/${state.edit.id}`:'users',{method:state.edit?'PUT':'POST',body:JSON.stringify({...state.edit,...data})});$('#editor').close();toast('Yönetim kullanıcısı kaydedildi');renderUsersManager()}catch(x){toast(x.message)}
+    return;
+  }
   if(state.view==='homeSettings'){
     e.preventDefault();
     const data=Object.fromEntries(new FormData(e.target));
@@ -700,11 +740,65 @@ async function renderMenusManager(){
   function openMenuEditor(item=null){state.edit=item;$('#formEyebrow').textContent=item?'MENÜYÜ DÜZENLE':'YENİ MENÜ';$('#formTitle').textContent=item?.title||'Yeni menü ekle';const isChild=!!item?.parent;$('#formFields').innerHTML=`<div class="field-grid"><label>Menü adı<input name="title" required value="${escapeHtml(item?.title||'')}"></label><label>Menü türü<select name="menuType"><option ${!isChild?'selected':''}>Ana menü</option><option ${isChild?'selected':''}>Alt menü</option></select></label><label class="parent-menu-field">Hangi ana menünün altında?<select name="parent"><option value="">Ana menü seçin</option>${mains.filter(x=>x.id!==item?.id).map(x=>`<option ${x.title===item?.parent?'selected':''}>${escapeHtml(x.title)}</option>`).join('')}</select></label><label>Bağlantı<input name="url" required value="${escapeHtml(item?.url||'')}"></label><label>Sıra<input name="order" type="number" min="1" value="${escapeHtml(item?.order||1)}"></label><label>Durum<select name="status"><option>Aktif</option><option ${item?.status==='Pasif'?'selected':''}>Pasif</option></select></label></div>`;const type=$('#formFields [name="menuType"]'),parent=$('#formFields [name="parent"]'),sync=()=>{parent.disabled=type.value==='Ana menü';if(parent.disabled)parent.value=''};type.onchange=sync;sync();$('#editor').showModal()}
 }
 
+const adminSocialIcon=name=>{
+  const key=norm(name),paths={instagram:'M7 2h10a5 5 0 0 1 5 5v10a5 5 0 0 1-5 5H7a5 5 0 0 1-5-5V7a5 5 0 0 1 5-5Zm5 5a5 5 0 1 0 0 10 5 5 0 0 0 0-10Zm6.2-1.5a1.2 1.2 0 1 0 0 2.4 1.2 1.2 0 0 0 0-2.4Z',facebook:'M14 22v-8h3l.5-4H14V8c0-1.2.4-2 2.2-2H18V2.2c-.8-.1-2-.2-3.4-.2C11.2 2 9 4 9 7.7V10H6v4h3v8h5Z',linkedin:'M5 8.5H1.5V22H5V8.5ZM3.2 2A2.1 2.1 0 1 0 3.2 6.2 2.1 2.1 0 0 0 3.2 2ZM22 14.3c0-4.1-2.2-6-5.1-6-2.4 0-3.4 1.3-4 2.2v-2H9.4V22H13v-6.7c0-1.8.3-3.5 2.5-3.5 2.1 0 2.2 2 2.2 3.6V22H22v-7.7Z',youtube:'M23 7.2a3 3 0 0 0-2.1-2.1C19 4.5 12 4.5 12 4.5s-7 0-8.9.6A3 3 0 0 0 1 7.2 31 31 0 0 0 .5 12c0 1.6.1 3.2.6 4.8a3 3 0 0 0 2.1 2.1c1.9.6 8.9.6 8.9.6s7 0 8.9-.6a3 3 0 0 0 2.1-2.1c.5-1.6.6-3.2.6-4.8s-.1-3.2-.6-4.8ZM9.7 15.7V8.3l6.2 3.7-6.2 3.7Z',x:'M18.8 2H22l-7 8 8.2 12h-6.4l-5-6.6L6 22H2.8l7.5-8.6L2.4 2H9l4.5 6 5.3-6Zm-1.1 17.9h1.8L8 4H6.1l11.6 15.9Z',pinterest:'M12 2a10 10 0 0 0-3.6 19.3c-.1-1.6 0-3.4.4-5.1l1.3-5.5s-.3-.7-.3-1.8c0-1.7 1-3 2.2-3 1 0 1.5.8 1.5 1.7 0 1-.7 2.6-1 4-.6 1.2.6 2.2 1.8 2.2 2.2 0 3.8-2.3 3.8-5.6 0-2.9-2.1-5-5.1-5-3.5 0-5.5 2.6-5.5 5.3 0 1 .4 2.2.9 2.8.1.1.1.2.1.4l-.4 1.5c-.1.5-.5.6-.9.4-2.3-1.1-3.7-4.3-3.7-6.9 0-5.6 4.1-9.6 11.7-9.6 6.1 0 10.9 4.4 10.9 10.2 0 6.1-3.8 11-9.2 11-1.8 0-3.5-.9-4.1-2l-1.1 4.2c-.4 1.6-1.5 3.5-2.2 4.7.8.2 1.7.3 2.6.3A10 10 0 1 0 12 2Z'};
+  const path=paths[key.includes('twitter')?'x':key]||paths.linkedin;
+  return`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${path}"/></svg>`;
+};
+
+async function renderSiteSettingsManager(){
+  state.view='settings';$('#nav .active')?.classList.remove('active');$(`#nav [data-view="settings"]`)?.classList.add('active');
+  $('#viewTitle').textContent='Site ayarları';$('#addButton').hidden=true;
+  const items=await api('settings'),byKey=Object.fromEntries(items.map(x=>[x.key,x]));
+  state.items=siteSettingDefs.map(([key,label,placeholder,type])=>({key,label,placeholder,type,item:byKey[key]||null,value:byKey[key]?.value||''}));
+  const visuals=state.items.filter(x=>x.type==='image'),identity=state.items.filter(x=>!x.key.startsWith('contact.')&&x.type!=='image'),contact=state.items.filter(x=>x.key.startsWith('contact.'));
+  const group=(title,desc,rows)=>`<section class="settings-group"><header><div><h3>${title}</h3><p>${desc}</p></div></header><div class="settings-card-grid">${rows.map(x=>`<article class="settings-card ${x.type==='image'?'visual':''}">${x.type==='image'?`<img src="${escapeHtml(x.value||x.placeholder)}" alt="">`:''}<small>${escapeHtml(x.label)}</small><b>${escapeHtml(x.type==='image'?(x.value?'Özel görsel kullanılıyor':'Varsayılan görsel'):x.value||x.placeholder)}</b><span>${escapeHtml(x.key)}</span><div><button data-site-setting="${escapeHtml(x.key)}">Düzenle</button>${x.item?`<button data-clear-site-setting="${escapeHtml(x.item.id)}">Varsayılana dön</button>`:''}</div></article>`).join('')}</div></section>`;
+  $('#workspace').innerHTML=`<section class="settings-console"><div class="module-console-hero"><div><p class="eyebrow">SİTE AYARLARI / KİMLİK VE GÖRSEL</p><h2>Sitenin görünümünü tek merkezden özelleştirin.</h2><p>Site adı, tarayıcı başlığı, SEO açıklaması, logo, favicon, ana kapak görseli ve iletişim bilgileri doğrudan ziyaretçi sitesine uygulanır. Yüklenen tüm görseller otomatik WebP olarak saklanır.</p><div class="module-action-row"><a href="index.html" target="_blank">Siteyi aç ↗</a></div></div><div class="module-kpi-grid"><article><small>Tanımlı ayar</small><b>${state.items.length}</b></article><article><small>Özelleştirilen</small><b>${state.items.filter(x=>x.value).length}</b></article><article><small>Görsel alan</small><b>${visuals.length}</b></article><article><small>Durum</small><b>Canlı</b></article></div></div>${group('Site kimliği ve SEO','Ziyaretçinin tarayıcıda ve üst kimlik alanlarında gördüğü bilgiler.',identity)}${group('Logo, ikon ve ana kapak','JPG veya PNG seçebilirsiniz; sistem WebP’ye dönüştürür.',visuals)}${group('İletişim bilgileri','Ana sayfa ve iletişim sayfasında ortak kullanılan bilgiler.',contact)}</section>`;
+  document.querySelectorAll('[data-site-setting]').forEach(b=>b.onclick=()=>openSiteSettingEditor(state.items.find(x=>x.key===b.dataset.siteSetting)));
+  document.querySelectorAll('[data-clear-site-setting]').forEach(b=>b.onclick=async()=>{if(!confirm('Bu ayar varsayılan değerine dönsün mü?'))return;await api(`settings/${b.dataset.clearSiteSetting}`,{method:'DELETE'});toast('Varsayılan değer geri yüklendi');renderSiteSettingsManager()});
+}
+function openSiteSettingEditor(row){
+  state.edit=row.item||null;state.siteSettingKey=row.key;$('#formEyebrow').textContent='SİTE AYARI';$('#formTitle').textContent=row.label;
+  const value=escapeHtml(row.value||'');
+  const input=row.type==='textarea'?`<textarea id="field-value" name="value" rows="6" placeholder="${escapeHtml(row.placeholder)}">${value}</textarea>`:`<input id="field-value" name="value" type="${row.type==='image'?'text':row.type}" value="${value}" placeholder="${escapeHtml(row.placeholder)}">`;
+  $('#formFields').innerHTML=`<div class="field-grid"><label class="full">Alan<input name="title" value="${escapeHtml(row.label)}" readonly></label><input type="hidden" name="key" value="${escapeHtml(row.key)}"><input type="hidden" name="status" value="Aktif"><label class="full">Değer${input}</label>${row.type==='image'?`<label class="full image-field">Görsel yükle<input class="auto-webp-file" data-target="value" type="file" accept="image/jpeg,image/png,image/webp">${row.value||row.placeholder?`<img class="content-image-preview" src="${escapeHtml(row.value||row.placeholder)}" alt="">`:''}</label>`:''}</div>`;
+  bindAutoWebpUploads($('#formFields'));$('#editor').showModal();
+}
+
+async function renderSocialManager(){
+  state.view='socialLinks';$('#nav .active')?.classList.remove('active');$(`#nav [data-view="socialLinks"]`)?.classList.add('active');$('#viewTitle').textContent='Sosyal medya';$('#addButton').hidden=true;
+  const items=await api('socialLinks');state.items=items;
+  const rows=socialPlatforms.map(([title,key])=>({title,key,item:items.find(x=>norm(x.title)===norm(title)||norm(x.platform)===key)||null}));
+  $('#workspace').innerHTML=`<section class="social-console"><div class="module-console-hero"><div><p class="eyebrow">İLETİŞİM / SOSYAL MEDYA</p><h2>Sosyal hesapları bir kez ekleyin, sitede otomatik yayınlansın.</h2><p>Profil adresi girilen hesap otomatik Aktif olur ve profesyonel platform ikonu ile ana sayfa alt bilgisi ve iletişim sayfasında görünür. Boş bırakılan hesap sitede gösterilmez.</p><div class="module-action-row"><a href="contact.html" target="_blank">İletişim sayfasını aç ↗</a></div></div><div class="module-kpi-grid"><article><small>Platform</small><b>${rows.length}</b></article><article><small>Aktif hesap</small><b>${rows.filter(x=>x.item?.url&&x.item.status!=='Pasif').length}</b></article><article><small>Otomatik ikon</small><b>${rows.length}</b></article><article><small>Bağlantı</small><b>Canlı</b></article></div></div><div class="social-admin-grid">${rows.map(x=>{const active=x.item?.url&&x.item.status!=='Pasif';return`<article class="${active?'active':'inactive'}"><i class="social-icon">${adminSocialIcon(x.key)}</i><div><small>${escapeHtml(x.title)}</small><b>${escapeHtml(x.item?.url||'Henüz eklenmedi')}</b><span class="status">${active?'Aktif':'Pasif'}</span></div><button data-social-platform="${escapeHtml(x.title)}">${x.item?'Düzenle':'Hesap ekle'}</button></article>`}).join('')}</div></section>`;
+  document.querySelectorAll('[data-social-platform]').forEach(b=>{const row=rows.find(x=>x.title===b.dataset.socialPlatform);b.onclick=()=>openSocialEditor(row.title,row.item)});
+}
+function openSocialEditor(title,item){state.edit=item||null;state.socialPlatform=title;$('#formEyebrow').textContent='SOSYAL MEDYA HESABI';$('#formTitle').textContent=title;$('#formFields').innerHTML=`<div class="field-grid"><label>Platform<input name="title" value="${escapeHtml(title)}" readonly></label><label class="full">Profil bağlantısı<input name="url" type="url" value="${escapeHtml(item?.url||'')}" placeholder="https://..."></label><p class="full form-help">Bağlantı girildiğinde hesap otomatik Aktif olur. Bağlantıyı temizlerseniz sitede görünmez.</p></div>`;$('#editor').showModal()}
+
+async function renderUsersManager(){
+  state.view='users';$('#nav .active')?.classList.remove('active');$(`#nav [data-view="users"]`)?.classList.add('active');$('#viewTitle').textContent='Site yönetimi kullanıcıları';$('#addButton').hidden=false;$('#addButton').textContent='+ Yönetim kullanıcısı ekle';$('#addButton').onclick=()=>openUserEditor();
+  let items=await api('users');if(currentRole==='moderator')items=items.filter(x=>norm(x.role).includes('yazar'));state.items=items;
+  const roleInfo={Yönetici:'Tüm site, üyelik, mali ve kullanıcı ayarları',Moderatör:'İçerik, etkinlik, başvuru ve yazar onayı',Sayman:'Aidat, ödeme, gelir-gider ve banka kayıtları','Köşe Yazarı':'Yalnızca kendi yazı paneli'};
+  $('#workspace').innerHTML=`<section class="users-console"><div class="module-console-hero"><div><p class="eyebrow">SİTE AYARLARI / YETKİLER</p><h2>Yönetim hesaplarını ve erişim rollerini kontrol edin.</h2><p>Bu hesaplar dernek üye listesinden ayrıdır. Aynı giriş ekranını kullanırlar ancak rollerine göre yalnızca yetkili oldukları panele yönlendirilirler.</p><div class="module-action-row"><button class="primary" data-new-admin-user>+ Kullanıcı ekle</button></div></div><div class="module-kpi-grid"><article><small>Toplam</small><b>${items.length}</b></article><article><small>Yönetici</small><b>${items.filter(x=>x.role==='Yönetici').length}</b></article><article><small>Moderatör</small><b>${items.filter(x=>x.role==='Moderatör').length}</b></article><article><small>Aktif</small><b>${items.filter(x=>x.status!=='Pasif').length}</b></article></div></div><div class="user-admin-grid">${items.map(x=>`<article><div><small>${escapeHtml(x.role||'Yönetici')}</small><h3>${escapeHtml(x.name||x.email)}</h3><a href="mailto:${escapeHtml(x.email||'')}">${escapeHtml(x.email||'')}</a><p>${escapeHtml(roleInfo[x.role]||'Rol bazlı panel erişimi')}</p></div><span class="status">${escapeHtml(x.status||'Aktif')}</span><button data-user-edit="${x.id}">Düzenle</button></article>`).join('')||'<p class="empty">Henüz yönetim kullanıcısı yok.</p>'}</div></section>`;
+  document.querySelector('[data-new-admin-user]').onclick=()=>openUserEditor();document.querySelectorAll('[data-user-edit]').forEach(b=>b.onclick=()=>openUserEditor(items.find(x=>x.id===b.dataset.userEdit)));
+}
+function openUserEditor(item=null){state.edit=item;$('#formEyebrow').textContent=item?'YÖNETİM KULLANICISINI DÜZENLE':'YENİ YÖNETİM KULLANICISI';$('#formTitle').textContent=item?.name||'Yeni kullanıcı';const moderator=currentRole==='moderator';$('#formFields').innerHTML=`<div class="field-grid"><label>Ad soyad<input name="name" required value="${escapeHtml(item?.name||'')}"></label><label>E-posta / kullanıcı adı<input name="email" type="email" required value="${escapeHtml(item?.email||'')}"></label><label>Rol<select name="role" ${moderator?'disabled':''}>${['Yönetici','Moderatör','Sayman','Köşe Yazarı'].map(x=>`<option ${x===(moderator?'Köşe Yazarı':item?.role)?'selected':''}>${x}</option>`).join('')}</select>${moderator?'<input type="hidden" name="role" value="Köşe Yazarı">':''}</label><label>Durum<select name="status"><option>Aktif</option><option ${item?.status==='Pasif'?'selected':''}>Pasif</option></select></label><label class="full">Yeni şifre <input name="password" type="password" minlength="8" placeholder="Boş bırakırsanız otomatik oluşturulur"></label><label class="full check-field"><input name="autoPassword" type="checkbox" value="1" ${item?'':'checked'}> Güvenli geçici şifreyi otomatik oluştur</label></div>`;$('#editor').showModal()}
+
+async function renderModulesManager(){
+  state.view='modules';$('#nav .active')?.classList.remove('active');$(`#nav [data-view="modules"]`)?.classList.add('active');$('#viewTitle').textContent='Ana sayfa bölümleri';$('#addButton').hidden=true;
+  const items=await api('modules');state.items=items;
+  $('#workspace').innerHTML=`<section class="modules-console"><div class="module-console-hero"><div><p class="eyebrow">SİTE AYARLARI / BÖLÜMLER</p><h2>Ana sayfanın bölümlerini tek tıkla açın veya gizleyin.</h2><p>Bir bölümü Pasif yaptığınızda içerik silinmez; yalnızca ziyaretçi ana sayfasında gizlenir. Tekrar Aktif yapınca aynı içeriğiyle geri gelir.</p><div class="module-action-row"><a href="index.html" target="_blank">Ana sayfayı aç ↗</a></div></div><div class="module-kpi-grid"><article><small>Bölüm</small><b>${homeModuleDefs.length}</b></article><article><small>Aktif</small><b>${homeModuleDefs.filter(([key])=>(items.find(x=>x.key===key)?.status||'Aktif')!=='Pasif').length}</b></article><article><small>Gizli</small><b>${homeModuleDefs.filter(([key])=>items.find(x=>x.key===key)?.status==='Pasif').length}</b></article><article><small>İçerik</small><b>Korunur</b></article></div></div><div class="module-toggle-grid">${homeModuleDefs.map(([key,title,desc])=>{const item=items.find(x=>x.key===key),active=item?.status!=='Pasif';return`<article class="${active?'active':'inactive'}"><div><small>${active?'SİTEDE GÖRÜNÜR':'SİTEDE GİZLİ'}</small><h3>${escapeHtml(title)}</h3><p>${escapeHtml(desc)}</p></div><button data-toggle-module="${key}">${active?'Pasif yap':'Aktif yap'}</button></article>`}).join('')}</div></section>`;
+  document.querySelectorAll('[data-toggle-module]').forEach(b=>b.onclick=async()=>{const [key,title,description]=homeModuleDefs.find(x=>x[0]===b.dataset.toggleModule),item=items.find(x=>x.key===key),status=item?.status==='Pasif'?'Aktif':'Pasif',data={key,title,description,status};await api(item?`modules/${item.id}`:'modules',{method:item?'PUT':'POST',body:JSON.stringify({...item,...data})});toast(`${title}: ${status}`);renderModulesManager()});
+}
+
 const openViewWithConsole=openView;
 openView=async function(view){
   if(view==='dues')return renderDuesManager();
   if(view==='boards')return renderBoardsManager();
   if(view==='menus')return renderMenusManager();
+  if(view==='settings')return renderSiteSettingsManager();
+  if(view==='socialLinks')return renderSocialManager();
+  if(view==='users')return renderUsersManager();
+  if(view==='modules')return renderModulesManager();
   if(view==='homeSettings')return renderHomeSettingsManager();
   if(view==='sliders')return renderAutoSliderManager();
   if(contentViewConfig(view))return renderContentCategoryManager(view);
