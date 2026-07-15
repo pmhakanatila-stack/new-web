@@ -35,7 +35,7 @@ form.addEventListener('submit',async e=>{
     const result=await r.json();
     if(!r.ok)throw new Error(result.error||'Hesap oluşturulamadı');
     message.textContent='Hesabınız oluşturuldu. Üye paneline yönlendiriliyorsunuz…';
-    setTimeout(()=>location.href='member-portal.htmlcreated=1',650);
+    setTimeout(()=>location.href=result.redirect||'member-portal.html?created=1',650);
   }catch(err){
     message.textContent=err.message;
   }
