@@ -6,6 +6,7 @@ const file=document.querySelector('#document');
 const logoInput=document.querySelector('#companyLogo');
 const apiPath=path=>window.peyzajderApiPath?window.peyzajderApiPath(path):path;
 let member,companyLogoData='',memberTypes=[];
+const MAX_APPLICATION_SIZE=1024*1024;
 
 const money=n=>(Number(n)||0).toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2})+' ₺';
 const norm=s=>String(s||'').trim().toLocaleLowerCase('tr-TR');
@@ -178,6 +179,9 @@ async function load(){
   setPortalMode(d);
   renderInvitations(d.invitations||[]);
   renderMemberMessages(d.messages||[]);
+  const hasApplication=Boolean(d.application);
+  document.querySelector('#applicationUploadCard').hidden=hasApplication;
+  document.querySelector('#application').classList.toggle('has-application',hasApplication);
   if(showCorporatePanel){
     fillCompany(d.company||{email:d.email,phone:d.phone,city:d.city,name:d.application?.organization||''});
     loadJobs();
@@ -203,11 +207,21 @@ function imageToWebp(input,max=900){
   });
 }
 
-file.addEventListener('change',()=>document.querySelector('#fileLabel').textContent=file.files[0]?.name||'Dosya seçin');
+file.addEventListener('change',()=>{
+  const selected=file.files[0];
+  if(selected&&selected.size>MAX_APPLICATION_SIZE){
+    file.value='';
+    document.querySelector('#fileLabel').textContent='Dosya seçin veya buraya bırakın';
+    message.textContent='Dosya en fazla 1 MB olabilir.';
+    return;
+  }
+  message.textContent='';
+  document.querySelector('#fileLabel').textContent=selected?.name||'Dosya seçin veya buraya bırakın';
+});
 logoInput.addEventListener('change',async()=>{companyMessage.textContent='Logo WebP formatına hazırlanıyor…';companyLogoData=await imageToWebp(logoInput);companyMessage.textContent='Logo hazır. Kaydedince onaya gönderilecek.'});
 
 document.querySelector('#uploadForm').addEventListener('submit',async e=>{
-  e.preventDefault();if(!file.files[0])return;message.textContent='Belgeniz yükleniyor…';
+  e.preventDefault();if(!file.files[0])return;if(file.files[0].size>MAX_APPLICATION_SIZE){message.textContent='Dosya en fazla 1 MB olabilir.';return}message.textContent='Belgeniz yükleniyor…';
   const reader=new FileReader();reader.onload=async()=>{try{const form=Object.fromEntries(new FormData(e.target));form.data=reader.result;form.name=file.files[0].name;const r=await fetch(apiPath('/api/member/application'),{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify(form)});const d=await r.json();if(!r.ok)throw new Error(d.error);message.textContent='İmzalı başvurunuz yönetim paneline iletildi.';load()}catch(x){message.textContent=x.message}};reader.readAsDataURL(file.files[0]);
 });
 
