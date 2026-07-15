@@ -243,7 +243,7 @@ async function applyMemberHeader(){
   const account=document.querySelector('.header-account');
   if(!account)return;
   const showPanel=async(href,label)=>{
-    account.innerHTML=`<a class="button button-small panel-account-button" href="${href}">${streamEsc(label)}<span class="panel-alert-badge" hidden>!</span></a>`;
+    account.innerHTML=`<a class="button button-small panel-account-button" href="${href}" aria-label="${streamEsc(label)}"><span class="panel-label-full">${streamEsc(label)}</span><span class="panel-label-mobile">Panel</span><span class="panel-alert-badge" hidden>!</span></a>`;
     try{const response=await fetch(apiPath('/api/panel-notifications'),{credentials:'same-origin',cache:'no-store'});if(response.ok){const data=await response.json();const badge=account.querySelector('.panel-alert-badge');badge.hidden=!data.total;badge.title=data.total?`${data.total} yeni bildiriminiz var`:''}}
     catch{}
   };
