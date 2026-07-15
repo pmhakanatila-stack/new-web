@@ -1,4 +1,44 @@
-document.querySelector('.menu-toggle').addEventListener('click',()=>document.querySelector('.main-nav').classList.toggle('open'));
+const menuToggle=document.querySelector('.menu-toggle');
+const mainNav=document.querySelector('.main-nav');
+const mobileMenu=()=>window.matchMedia('(max-width:950px)').matches;
+function prepareMobileSubmenus(){
+  mainNav?.querySelectorAll('.nav-dropdown').forEach(group=>{
+    const trigger=group.querySelector(':scope>.nav-tile');
+    if(trigger){trigger.setAttribute('aria-haspopup','true');trigger.setAttribute('aria-expanded',String(group.classList.contains('submenu-open')))}
+  });
+}
+function closeMobileMenu(){
+  mainNav?.classList.remove('open');
+  mainNav?.querySelectorAll('.submenu-open').forEach(group=>group.classList.remove('submenu-open'));
+  mainNav?.querySelectorAll('[aria-expanded]').forEach(link=>link.setAttribute('aria-expanded','false'));
+  document.body.classList.remove('mobile-menu-open');
+  if(menuToggle){menuToggle.setAttribute('aria-expanded','false');menuToggle.setAttribute('aria-label','Menüyü aç');menuToggle.textContent='☰'}
+}
+if(menuToggle&&mainNav){
+  prepareMobileSubmenus();
+  menuToggle.setAttribute('aria-expanded','false');
+  menuToggle.addEventListener('click',()=>{
+    const willOpen=!mainNav.classList.contains('open');
+    if(!willOpen){closeMobileMenu();return}
+    mainNav.classList.add('open');document.body.classList.add('mobile-menu-open');menuToggle.setAttribute('aria-expanded','true');menuToggle.setAttribute('aria-label','Menüyü kapat');menuToggle.textContent='×';
+  });
+  mainNav.addEventListener('click',event=>{
+    const link=event.target.closest('a');if(!link||!mobileMenu())return;
+    const group=link.parentElement?.classList.contains('nav-dropdown')?link.parentElement:null;
+    if(group&&link.classList.contains('nav-tile')){
+      event.preventDefault();
+      const opening=!group.classList.contains('submenu-open');
+      mainNav.querySelectorAll('.nav-dropdown.submenu-open').forEach(item=>{if(item!==group){item.classList.remove('submenu-open');item.querySelector(':scope>.nav-tile')?.setAttribute('aria-expanded','false')}});
+      group.classList.toggle('submenu-open',opening);link.setAttribute('aria-expanded',String(opening));
+      if(opening)setTimeout(()=>group.scrollIntoView({behavior:'smooth',block:'nearest'}),80);
+      return;
+    }
+    closeMobileMenu();
+  });
+  document.addEventListener('click',event=>{if(mobileMenu()&&mainNav.classList.contains('open')&&!event.target.closest('.site-header'))closeMobileMenu()});
+  document.addEventListener('keydown',event=>{if(event.key==='Escape')closeMobileMenu()});
+  window.addEventListener('resize',()=>{if(!mobileMenu())closeMobileMenu()});
+}
 const apiPath=path=>window.peyzajderApiPath?window.peyzajderApiPath(path):String(path||'');
 
 const observer=new IntersectionObserver(entries=>entries.forEach(entry=>{
@@ -231,6 +271,7 @@ async function applyPublicMenus(){
     const items=await response.json(),mains=items.filter(x=>!x.parent);if(!mains.length)return;
     const nav=document.querySelector('.main-nav');if(!nav)return;
     nav.innerHTML=mains.map((main,i)=>{const children=items.filter(x=>String(x.parent||'').toLocaleLowerCase('tr-TR')===String(main.title||'').toLocaleLowerCase('tr-TR'));const link=`<a class="nav-tile" href="${streamEsc(main.url||'#')}"><span>${String(i+1).padStart(2,'0')}</span>${streamEsc(main.title)}</a>`;return children.length?`<div class="nav-dropdown">${link}<div class="dropdown-menu">${children.map(x=>`<a href="${streamEsc(x.url||'#')}">${streamEsc(x.title)}</a>`).join('')}</div></div>`:link}).join('');
+    prepareMobileSubmenus();
   }catch{}
 }
 
