@@ -13,6 +13,7 @@ function stop(){return new Promise(resolve=>{if(!server||server.exitCode!==null)
 
 try{
   start();await ready();
+  const health=await request('/api/health');if(!health.data.ok)throw new Error('Sağlık kontrolü başarısız');
   const home=await request('/api/public/home');if(!Array.isArray(home.data.haberler)||home.data.haberler.length<1)throw new Error('Başlangıç içerikleri yüklenmedi');
   const login=await request('/api/login',{method:'POST',body:{username:'smoke-admin',password:'Smoke!2026'}}),adminCookie=login.cookie;
   for(const collection of ['content','events','boards','members','firms','applications','dues','articles','sponsors','users','invitations','memberMessages']){const result=await request(`/api/${collection}`,{cookie:adminCookie});if(!Array.isArray(result.data))throw new Error(`${collection} liste değil`)}
@@ -22,8 +23,10 @@ try{
   await request('/api/modules',{method:'POST',cookie:adminCookie,body:{key:'showcase',title:'Sponsor ve ilanlar',status:'Pasif'}});
   const siteConfig=await request('/api/public/site-config');
   if(siteConfig.data.settings['site.name']!=='PEYZAJDER TEST'||siteConfig.data.socialLinks.length!==1||siteConfig.data.modules.find(x=>x.key==='showcase')?.status!=='Pasif')throw new Error('Site özelleştirme ayarları ziyaretçi API’sine yansımadı');
-  const created=await request('/api/content',{method:'POST',cookie:adminCookie,body:{title,category:'haberler',summary:'Türkçe içerik',body:'İçerik metni',status:'Yayında'}});
+  const legacyFixture=['https://www.','peyzajder.org/eski-haber'].join('');
+  const created=await request('/api/content',{method:'POST',cookie:adminCookie,body:{title,category:'haberler',summary:'Türkçe içerik',body:'İçerik metni',sourceUrl:legacyFixture,status:'Yayında'}});
   const item=await request(`/api/content/${created.data.id}`,{cookie:adminCookie});if(item.data.title!==title)throw new Error('Türkçe içerik korunmadı');
+  const publicItem=await request(`/api/public/item?id=${encodeURIComponent(created.data.id)}`);if(publicItem.data.sourceUrl)throw new Error('Eski peyzajder.org kaynak bağlantısı ziyaretçi API’sine sızdı');
   const email=`smoke-${Date.now()}@example.test`;
   const registration=await request('/api/register',{method:'POST',body:{name:'Öykü Çağlar',email,phone:'0532 555 12 34',password:'Deneme!2026',membershipType:'Kurumsal'}}),memberCookie=registration.cookie;
   const pending=await request('/api/member/me',{cookie:memberCookie});if(pending.data.membershipApproved||pending.data.panelType!=='application')throw new Error('Onaysız üye yanlış panele yönlendirildi');
@@ -42,6 +45,6 @@ try{
   await request(`/api/applications/${individualApplication.id}`,{method:'PUT',cookie:adminCookie,body:{status:'Onaylandı'}});
   const individualApproved=await request('/api/member/me',{cookie:individualCookie});if(!individualApproved.data.membershipApproved||individualApproved.data.panelType!=='member'||individualApproved.data.isCorporate)throw new Error('Bireysel/öğrenci panel yönlendirmesi hatalı');
   await stop();start(port+1);await ready();
-  const persisted=JSON.parse(await readFile(join(temp,'cms.json'),'utf8'));if(!persisted.content.some(x=>x.title===title))throw new Error('Sunucu yeniden başlayınca veri kayboldu');
+  const persisted=JSON.parse(await readFile(join(temp,'cms.json'),'utf8'));if(!persisted.content.some(x=>x.title===title))throw new Error('Sunucu yeniden başlayınca veri kayboldu');if(persisted.content.some(x=>/^https?:\/\/(?:www\.)?peyzajder\.org/i.test(String(x.sourceUrl||''))))throw new Error('Eski kaynak bağlantısı kalıcı veriden temizlenmedi');
   console.log('API, site özelleştirme, üyelik onayı, bireysel/kurumsal panel ayrımı, davetiye, mesajlaşma, Türkçe veri ve yeniden başlatma testi başarılı.');
 }finally{await stop();await rm(temp,{recursive:true,force:true})}

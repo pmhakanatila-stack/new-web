@@ -7,6 +7,7 @@
     "start": "node server.mjs",
     "check:syntax": "node scripts/check-syntax.mjs",
     "check:encoding": "node scripts/check-encoding.mjs",
+    "clean:legacy-links": "node scripts/clean-legacy-links.mjs",
     "test:smoke": "node scripts/smoke-test.mjs",
     "test": "npm run check:syntax && npm run check:encoding && npm run test:smoke"
   },

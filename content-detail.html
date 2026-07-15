@@ -11,6 +11,7 @@ const categoryName=x=>x==='haberler'?'Haber':x==='etkinlikler'?'Etkinlik':x==='d
 const paragraphs=text=>String(text||'').split(/\n{2,}|\r\n/).map(clean).filter(Boolean);
 const richBody=text=>/<\/?(?:p|h2|h3|strong|b|em|i|u|ul|ol|li|blockquote|a|br)\b/i.test(String(text||''))?String(text||''):paragraphs(text).map((p,i)=>i===0?`<p class="lead">${esc(p)}</p>`:`<p>${esc(p)}</p>`).join('');
 Promise.all([fetch(`${apiPath('/api/public/item')}?id=${encodeURIComponent(id)}`,{cache:'no-store'}).then(async r=>{const d=await r.json();if(!r.ok)throw new Error(d.error);return d}),fetch(apiPath('/api/public/archive'),{cache:'no-store'}).then(r=>r.json()).catch(()=>({items:[]}))]).then(([item,archive])=>{
+  if(/^https?:\/\/(?:www\.)?peyzajder\.org(?:[/?#]|$)/i.test(String(item.sourceUrl||'').trim()))item.sourceUrl='';
   const label=categoryName(item.category),back=categoryPage(item.category),parts=paragraphs(item.body||item.summary),date=item.date?new Date(item.date).toLocaleDateString('tr-TR',{day:'numeric',month:'long',year:'numeric'}):'';
   const related=(archive.items||[]).filter(x=>x.category===item.category&&x.id!==item.id).slice(0,4);
   document.title=`${item.title||label} — PEYZAJDER`;

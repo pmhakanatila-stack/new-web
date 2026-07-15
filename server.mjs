@@ -13,6 +13,17 @@ const types={'.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8'
 const collections=['content','events','boards','members','firms','accounts','memberGroups','applications','dues','duePeriods','payments','businessLedger','decisions','subscribers','emailCampaigns','smsCampaigns','notifications','invitations','memberMessages','notificationReads','surveys','galleries','videos','articles','authors','publications','webinars','menus','sliders','popups','promoPanels','socialLinks','sponsors','sponsorCategories','jobPosts','bankAccounts','contactMessages','supportTickets','settings','users','modules'];
 await mkdir(dataDir,{recursive:true});await mkdir(uploadDir,{recursive:true});
 
+const isLegacyPeyzajderSource=value=>/^https?:\/\/(?:www\.)?peyzajder\.org(?:[/?#]|$)/i.test(String(value||'').trim());
+function removeLegacyContentSources(value){
+  let changed=0;
+  for(const collection of ['content','events','articles','publications','webinars','galleries','videos']){
+    for(const item of value?.[collection]||[]){
+      if(isLegacyPeyzajderSource(item?.sourceUrl)){delete item.sourceUrl;changed++}
+    }
+  }
+  return changed;
+}
+
 function normalizeDb(value={}){
   const result=value&&typeof value==='object'&&!Array.isArray(value)?value:{};
   for(const collection of collections)if(!Array.isArray(result[collection]))result[collection]=[];
@@ -24,7 +35,7 @@ async function initialDb(){
   try{return normalizeDb(await readJson(dbFile))}catch{}
   try{return normalizeDb(await readJson(dbBackupFile))}catch{}
   try{const seeded=normalizeDb(await readJson(join(root,'seed-cms.json')));await save(seeded);return seeded}catch{}
-  let migrated=[];try{const source=await readJson(join(root,'content-data.json'));migrated=source.pages.filter(x=>x.title&&!x.error).map((x,i)=>({id:`content-${i+1}`,title:x.title,category:x.category,status:'Yayında',summary:x.paragraphs?.[0]||'',body:(x.paragraphs||[]).join('\n\n'),image:x.images?.[0]?.src||'',sourceUrl:x.url,createdAt:new Date().toISOString()}))}catch{}
+  let migrated=[];try{const source=await readJson(join(root,'content-data.json'));migrated=source.pages.filter(x=>x.title&&!x.error).map((x,i)=>({id:`content-${i+1}`,title:x.title,category:x.category,status:'Yayında',summary:x.paragraphs?.[0]||'',body:(x.paragraphs||[]).join('\n\n'),image:x.images?.[0]?.src||'',createdAt:new Date().toISOString()}))}catch{}
   const fresh=normalizeDb({content:migrated,events:migrated.filter(x=>x.category==='etkinlikler').map(x=>({...x,id:`event-${x.id}`})),boards:[{id:'board-1',title:'Yönetim Kurulu',name:'Fulya AKFİDAN SEVİM',role:'Başkan',status:'Aktif',createdAt:new Date().toISOString()}],activity:[]});await save(fresh);return fresh;
 }
 let saveChain=Promise.resolve();
@@ -39,6 +50,8 @@ async function save(value){
   return saveChain;
 }
 let db=await initialDb();
+const removedLegacySources=removeLegacyContentSources(db);
+if(removedLegacySources){await save(db);try{await copyFile(dbFile,dbBackupFile)}catch{}}
 const defaultMemberTypes=[['Bireysel',1],['Kurumsal',2],['Öğrenci',3]];
 const earlyNorm=s=>String(s||'').trim().toLocaleLowerCase('tr-TR');
 let memberTypesChanged=false;
@@ -51,7 +64,7 @@ for(const [title,order] of defaultMemberTypes){
 if(memberTypesChanged){
   await save(db);
 }
-if(!db.content.length){try{const source=JSON.parse((await readFile(join(root,'content-data.json'),'utf8')).replace(/^\uFEFF/,''));db.content=source.pages.filter(x=>x.title&&!x.error).map((x,i)=>({id:`content-${i+1}`,title:x.title,category:x.category,status:'Yayında',summary:x.paragraphs?.[0]||'',body:(x.paragraphs||[]).join('\n\n'),image:x.images?.[0]?.src||'',sourceUrl:x.url,createdAt:new Date().toISOString()}));db.events=db.content.filter(x=>x.category==='etkinlikler').map(x=>({...x,id:`event-${x.id}`}));await save(db)}catch{}}
+if(!db.content.length){try{const source=JSON.parse((await readFile(join(root,'content-data.json'),'utf8')).replace(/^\uFEFF/,''));db.content=source.pages.filter(x=>x.title&&!x.error).map((x,i)=>({id:`content-${i+1}`,title:x.title,category:x.category,status:'Yayında',summary:x.paragraphs?.[0]||'',body:(x.paragraphs||[]).join('\n\n'),image:x.images?.[0]?.src||'',createdAt:new Date().toISOString()}));db.events=db.content.filter(x=>x.category==='etkinlikler').map(x=>({...x,id:`event-${x.id}`}));await save(db)}catch{}}
 const json=(res,status,data,headers={})=>{res.writeHead(status,{'Content-Type':'application/json; charset=utf-8',...headers});res.end(JSON.stringify(data))};
 const withBase=p=>`${BASE_PATH}${p.startsWith('/')?p:`/${p}`}`;
 const body=async req=>{const parts=[];for await(const c of req)parts.push(c);if(!parts.length)return{};const data=JSON.parse(Buffer.concat(parts).toString('utf8')),pathname=new URL(req.url||'/',`http://${req.headers.host||'localhost'}`).pathname,collection=pathname.startsWith('/api/author/articles')?'articles':pathname.split('/').filter(Boolean)[1]||'';return sanitizeRichRecord(collection,data)};
@@ -171,10 +184,11 @@ function publicSponsorGroups(placement){
 function publicContentItem(x,type='Gündem'){
   const clean=v=>String(v||'').replace(/var\s+approachingEvent;/gi,'').replace(/var\s+content_slider;/gi,'').replace(/google-site-verification=[^\s]+/gi,'').replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim();
   const body=sanitizeRichHtml(x.body||x.description||'');
-  return{id:x.id,title:clean(x.title||x.name||''),category:x.category||'',type,summary:clean(x.summary||x.description||body.slice(0,220)),body,image:x.image||x.cover||'',date:x.date||x.createdAt||'',author:x.author||'',sourceUrl:x.sourceUrl||''};
+  return{id:x.id,title:clean(x.title||x.name||''),category:x.category||'',type,summary:clean(x.summary||x.description||body.slice(0,220)),body,image:x.image||x.cover||'',date:x.date||x.createdAt||'',author:x.author||'',sourceUrl:isLegacyPeyzajderSource(x.sourceUrl)?'':x.sourceUrl||''};
 }
 
 async function api(req,res,url){
+  if(url.pathname==='/api/health'&&req.method==='GET')return json(res,200,{ok:true,service:'peyzajder-cms',time:new Date().toISOString()});
   if(url.pathname==='/api/public/site-config'&&req.method==='GET'){
     const visible=x=>!['Pasif','Taslak','Arşiv'].includes(String(x.status||'Aktif'));
     const settings=Object.fromEntries((db.settings||[]).filter(visible).map(x=>[String(x.key||x.title||''),String(x.value||'')]).filter(([key,value])=>key&&value));

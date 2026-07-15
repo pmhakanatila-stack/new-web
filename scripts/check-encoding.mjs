@@ -6,6 +6,7 @@ const textExtensions=new Set(['.html','.css','.js','.mjs','.json','.md','.yaml',
 const ignored=new Set(['.git','data','uploads','node_modules','work']);
 const mojibake=new RegExp(`[${String.fromCodePoint(0x00c3,0x00c4,0x00c5,0xfffd)}]`,'u');
 const brokenPieces=['.js'+'v=','.css'+'v=','.html'+'cat=','.html'+'type=','css2'+'family='];
+const legacySource=/https?:\/\/(?:www\.)?peyzajder\.org(?:[/?#]|$)/i;
 const failures=[];
 
 async function walk(directory){
@@ -20,6 +21,7 @@ async function walk(directory){
     if(text.includes(String.fromCodePoint(0xfffd)))failures.push(`${relative(root,path)}: invalid UTF-8 replacement character`);
     if(mojibake.test(text))failures.push(`${relative(root,path)}: mojibake sequence`);
     if(brokenPieces.some(piece=>text.includes(piece)))failures.push(`${relative(root,path)}: malformed URL pattern`);
+    if(legacySource.test(text))failures.push(`${relative(root,path)}: eski peyzajder.org kaynak bağlantısı`);
   }
 }
 
