@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Site Üyeliği — PEYZAJDER</title>
+  <title>Üyelik — PEYZAJDER</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700&display=swap" rel="stylesheet">
@@ -11,15 +11,8 @@
 </head>
 <body>
   <header>
-    <a class="brand" href="index.html">
-      <i>P</i>
-      <span>PEYZAJDER<small>Peyzaj Mimarları ve Sektör Profesyonelleri Derneği</small></span>
-    </a>
-    <nav>
-      <a href="index.html">Ana sayfa</a>
-      <a href="member-login.html">Üye girişi</a>
-      <a href="archive.html">İçerik merkezi</a>
-    </nav>
+    <a class="brand" href="index.html"><i>P</i><span>PEYZAJDER<small>Peyzaj Mimarları ve Sektör Profesyonelleri Derneği</small></span></a>
+    <nav><a href="index.html">Ana sayfa</a><a href="member-login.html">Üye girişi</a><a href="archive.html">İçerik merkezi</a></nav>
   </header>
   <main>
     <section class="member-intro">
@@ -34,24 +27,24 @@
     </section>
     <section class="form-side">
       <form id="memberForm">
-        <p class="eyebrow">Site üyeliği</p>
+        <p class="eyebrow">Üyelik</p>
         <h2>Hesabınızı oluşturun</h2>
         <div class="grid">
-          <label>Ad soyad<input name="name" required></label>
-          <label>E-posta<input name="email" type="email" required></label>
-          <label>Telefon<input name="phone" required></label>
-          <label>Şehir<input name="city"></label>
+          <label>Ad soyad<input name="name" type="text" autocomplete="name" minlength="3" maxlength="100" required><small>Adınızı ve soyadınızı birlikte yazın.</small></label>
+          <label>E-posta<input name="email" type="email" autocomplete="email" maxlength="160" required></label>
+          <label>Telefon<input name="phone" type="tel" inputmode="tel" autocomplete="tel" maxlength="20" pattern="[0-9+() -]{10,20}" title="Telefon numaranızı yalnızca rakam ve telefon işaretleriyle yazın." required><small>Örnek: 0532 123 45 67</small></label>
+          <label>Şehir<input name="city" autocomplete="address-level2"></label>
           <label>Üyelik türü<select name="membershipType" id="membershipType" required><option>Bireysel</option><option>Kurumsal</option><option>Öğrenci</option></select><small id="memberTypeFee">Giriş bedeli yükleniyor…</small></label>
-          <label>Meslek / uzmanlık<input name="profession"></label>
-          <label>Şifre<input name="password" type="password" minlength="8" required><small>En az 8 karakter</small></label>
+          <label>Meslek / uzmanlık<input name="profession" autocomplete="organization-title"></label>
+          <label>Şifre<input name="password" type="password" autocomplete="new-password" minlength="8" maxlength="128" required><small>En az 8 karakter</small></label>
         </div>
-        <label class="consent"><input name="consent" type="checkbox" required> Site üyelik hesabımın oluşturulması için verilerimin işlenmesini kabul ediyorum.</label>
-        <button type="submit">Site hesabı oluştur <span>→</span></button>
-        <p id="message"></p>
-        <p class="login-note">Zaten hesabınız var mı <a href="member-login.html">Üye girişi yapın</a></p>
+        <label class="consent"><input name="consent" type="checkbox" required> Üyelik hesabımın oluşturulması için verilerimin işlenmesini kabul ediyorum.</label>
+        <button type="submit">Hesap oluştur <span>→</span></button>
+        <p id="message" role="status" aria-live="polite"></p>
+        <p class="login-note">Zaten hesabınız var mı? <a href="member-login.html">Üye girişi yapın</a></p>
       </form>
     </section>
   </main>
-  <script src="membership.js?v=20260715-registration-redirect"></script>
+  <script src="membership.js?v=20260715-registration-validation"></script>
 </body>
 </html>
