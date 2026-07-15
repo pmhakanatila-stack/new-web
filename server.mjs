@@ -10,7 +10,7 @@ const COOKIE_PATH=BASE_PATH||'/';
 const PORT=Number(process.env.PORT||4173), HOST=process.env.PEYZAJDER_HOST||'0.0.0.0', USER=process.env.PEYZAJDER_ADMIN_USER||'admin', PASSWORD=process.env.PEYZAJDER_ADMIN_PASSWORD||'Peyzajder!2026';
 const sessions=new Map(),resetTokens=new Map();
 const types={'.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.js':'text/javascript; charset=utf-8','.json':'application/json; charset=utf-8','.png':'image/png','.jpg':'image/jpeg','.jpeg':'image/jpeg','.webp':'image/webp','.svg':'image/svg+xml'};
-const collections=['content','events','boards','members','firms','accounts','memberGroups','applications','dues','duePeriods','payments','businessLedger','decisions','subscribers','emailCampaigns','smsCampaigns','notifications','invitations','memberMessages','surveys','galleries','videos','articles','authors','publications','webinars','menus','sliders','popups','promoPanels','socialLinks','sponsors','sponsorCategories','jobPosts','bankAccounts','contactMessages','supportTickets','settings','users','modules'];
+const collections=['content','events','boards','members','firms','accounts','memberGroups','applications','dues','duePeriods','payments','businessLedger','decisions','subscribers','emailCampaigns','smsCampaigns','notifications','invitations','memberMessages','notificationReads','surveys','galleries','videos','articles','authors','publications','webinars','menus','sliders','popups','promoPanels','socialLinks','sponsors','sponsorCategories','jobPosts','bankAccounts','contactMessages','supportTickets','settings','users','modules'];
 await mkdir(dataDir,{recursive:true});await mkdir(uploadDir,{recursive:true});
 
 function normalizeDb(value={}){
@@ -103,6 +103,26 @@ const rejectedStatus=v=>{const x=normText(v);return x.includes('red')||x.include
 const pendingStatus=v=>waitingStatusText(normText(v));
 const memberRecordFor=a=>(db.members||[]).find(x=>x.accountId===a?.id||String(x.email||'').toLowerCase()===String(a?.email||'').toLowerCase())||null;
 const membershipApproved=(account,application,member=memberRecordFor(account))=>[account?.membershipStatus,application?.status,member?.membershipStatus,member?.status].some(approvedStatus);
+const itemTime=item=>new Date(item.createdAt||item.date||item.updatedAt||0).getTime()||0;
+function notificationSummary(req){
+  const memberAuth=memberSession(req),staffAuth=adminSession(req);
+  let key='',labels=[],messages=[],invitations=[];
+  if(memberAuth){
+    const account=db.accounts.find(x=>x.id===memberAuth.accountId);if(!account)return null;
+    const application=db.applications.find(x=>x.accountId===account.id)||null,member=memberRecordFor(account),membershipType=account.membershipType||account.group||application?.membershipType||member?.membershipType||'';
+    key=`member:${account.id}`;labels=['tümü','tüm üyeler','tum uyeler',normText(membershipType),normText(account.email)];if(['bireysel','öğrenci'].includes(normText(membershipType)))labels.push('bireysel & öğrenci','bireysel/öğrenci');
+    messages=(db.memberMessages||[]).filter(x=>(x.accountId===account.id||normText(x.email)===normText(account.email))&&!normText(x.direction).includes('üyeden yönetime'));
+  }else if(staffAuth){
+    const role=staffAuth.role||'admin',email=String(staffAuth.user||'').toLowerCase();
+    key=`staff:${email}`;labels=['tümü','tüm kullanıcılar','tum kullanicilar',normText(role),normText(roleLabel(role)),normText(email)];
+    if(['admin','moderator'].includes(role))messages=(db.memberMessages||[]).filter(x=>normText(x.direction).includes('üyeden yönetime')||normText(x.recipient||x.to)===normText(email));
+    else messages=(db.memberMessages||[]).filter(x=>normText(x.recipient||x.to)===normText(email));
+  }else return null;
+  invitations=(db.invitations||[]).filter(x=>!['pasif','taslak'].includes(normText(x.status||'Yayında'))).filter(x=>String(x.audience||x.target||'Tümü').split(',').map(normText).some(target=>labels.includes(target)));
+  const read=(db.notificationReads||[]).find(x=>x.key===key),seenAt=new Date(read?.seenAt||0).getTime()||0;
+  const unreadMessages=messages.filter(x=>itemTime(x)>seenAt).length,unreadInvitations=invitations.filter(x=>itemTime(x)>seenAt).length;
+  return{key,unreadMessages,unreadInvitations,total:unreadMessages+unreadInvitations};
+}
 function syncApplicationApproval(application){
   if(!application?.accountId)return;
   const account=db.accounts.find(x=>x.id===application.accountId),member=memberRecordFor(account);
@@ -243,6 +263,16 @@ async function api(req,res,url){
   if(url.pathname==='/api/public/editorials'&&req.method==='GET'){const safe=x=>['aktif','yayında','yayinda'].includes(String(x.status||'Yayında').toLocaleLowerCase('tr'));const byDate=(a,b)=>new Date(b.date||b.updatedAt||b.createdAt||0)-new Date(a.date||a.updatedAt||a.createdAt||0);const authors=db.authors||[];return json(res,200,(db.articles||[]).filter(safe).sort(byDate).map(x=>{const a=authors.find(y=>String(y.email||'').toLowerCase()===String(x.authorEmail||'').toLowerCase()||String(y.name||'')===String(x.author||''));return{id:x.id,title:x.title||'',summary:x.summary||String(x.body||'').replace(/<[^>]+>/g,' ').slice(0,180),body:sanitizeRichHtml(x.body||''),image:x.image||'',date:x.date||x.createdAt||'',author:x.author||a?.name||'PEYZAJDER yazarı',authorEmail:x.authorEmail||a?.email||'',authorPhoto:a?.photo||'',authorBio:a?.description||'',status:x.status||''}}))}
   if(url.pathname==='/api/public/competitions'&&req.method==='GET'){try{const r=await fetch('https://peyzajder.com/api/v1/public/competitions',{headers:{'Accept':'application/json'}}),d=await r.json();return json(res,r.ok?200:r.status,d)}catch(e){return json(res,200,{success:false,error:'Yarışma platformuna şu anda ulaşılamadı',data:{active_competitions:[],result_competitions:[],completed_competitions:[]}})}}
   if(url.pathname==='/api/public/contact'&&req.method==='POST'){const b=await body(req),name=String(b.name||'').trim(),email=String(b.email||'').trim(),message=String(b.message||'').trim();if(!name||!email.includes('@')||!message)return json(res,400,{error:'Ad soyad, geçerli e-posta ve mesaj alanı gerekli'});const item={id:`contactMessages-${Date.now()}-${randomBytes(3).toString('hex')}`,name,email,phone:String(b.phone||'').trim(),subject:String(b.subject||'İletişim'),message,status:'Yeni',createdAt:new Date().toISOString(),updatedAt:new Date().toISOString(),source:'İletişim sayfası'};db.contactMessages.unshift(item);audit('Yeni mesaj','contactMessages',item);await save(db);return json(res,201,{ok:true})}
+  if(url.pathname==='/api/panel-notifications'){
+    const summary=notificationSummary(req);if(!summary)return json(res,401,{error:'Oturum gerekli'});
+    if(req.method==='GET')return json(res,200,{unreadMessages:summary.unreadMessages,unreadInvitations:summary.unreadInvitations,total:summary.total});
+    if(req.method==='POST'){
+      let read=(db.notificationReads||[]).find(x=>x.key===summary.key);
+      if(!read){read={id:`notificationReads-${Date.now()}-${randomBytes(3).toString('hex')}`,key:summary.key,createdAt:new Date().toISOString()};db.notificationReads.push(read)}
+      read.seenAt=new Date().toISOString();read.updatedAt=read.seenAt;await save(db);return json(res,200,{ok:true});
+    }
+    return json(res,405,{error:'Yöntem desteklenmiyor'});
+  }
   if(url.pathname==='/api/register'&&req.method==='POST'){
     const b=await body(req);
     const name=String(b.name||'').trim().replace(/\s+/g,' ');

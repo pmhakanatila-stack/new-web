@@ -202,14 +202,16 @@ async function loadHomeStreams(){
 async function applyMemberHeader(){
   const account=document.querySelector('.header-account');
   if(!account)return;
-  const showPanel=(href,label)=>{
-    account.innerHTML=`<a class="button button-small" href="${href}">${streamEsc(label)}</a>`;
+  const showPanel=async(href,label)=>{
+    account.innerHTML=`<a class="button button-small panel-account-button" href="${href}">${streamEsc(label)}<span class="panel-alert-badge" hidden>!</span></a>`;
+    try{const response=await fetch(apiPath('/api/panel-notifications'),{credentials:'same-origin',cache:'no-store'});if(response.ok){const data=await response.json();const badge=account.querySelector('.panel-alert-badge');badge.hidden=!data.total;badge.title=data.total?`${data.total} yeni bildiriminiz var`:''}}
+    catch{}
   };
   try{
     const response=await fetch(apiPath('/api/member/me'),{credentials:'same-origin'});
     if(response.ok){
       const member=await response.json();
-      showPanel('member-portal.html','Panelime Git');
+      await showPanel('member-portal.html','Panelime Git');
       return;
     }
   }catch{}
@@ -219,7 +221,7 @@ async function applyMemberHeader(){
     const session=await response.json(),role=String(session.role||'admin').toLowerCase();
     const destinations={sayman:'sayman.html',moderator:'moderator.html',author:'writer-panel.html',admin:'admin.html'};
     const labels={sayman:'Sayman Paneli',moderator:'Moderatör Paneli',author:'Yazar Paneli',admin:'Yönetim Paneli'};
-    showPanel(destinations[role]||'admin.html',labels[role]||'Yönetim Paneli');
+    await showPanel(destinations[role]||'admin.html',labels[role]||'Yönetim Paneli');
   }catch{}
 }
 
