@@ -38,7 +38,6 @@ document.addEventListener('click',e=>{const b=e.target.closest?.('#nav [data-vie
 const adminFlowOrder=[
   ['dashboard','Genel bak\u0131\u015f','ANA','\u2302'],
   ['siteMap','Site yerle\u015fim haritas\u0131','ANA','\u2301'],
-  ['homeSettings','Ana sayfa metinleri','01 ANA SAYFA','\u2726'],
   ['promoPanels','Sa\u011f yar\u0131\u015fma panosu','01 ANA SAYFA','\u25c2'],
   ['sliders','G\u00fcndem slayt\u0131','02 G\u00dcNDEM','\u25b1'],
   ['news','Haberler','02 G\u00dcNDEM','\u25a4'],
@@ -82,7 +81,7 @@ const adminFlowOrder=[
   ['modules','Ana sayfa b\u00f6l\u00fcmleri','08 S\u0130TE AYARLARI','\u25c8']
 ];
 
-adminFlowOrder.forEach(([key,label,group,icon])=>{if(modules[key])modules[key]=[label,group,icon];else if(['siteMap','homeSettings','news','notices'].includes(key))modules[key]=[label,group,icon]});
+adminFlowOrder.forEach(([key,label,group,icon])=>{if(modules[key])modules[key]=[label,group,icon];else if(['siteMap','news','notices'].includes(key))modules[key]=[label,group,icon]});
 Object.keys(modules).forEach(key=>{if(!adminFlowOrder.some(([k])=>k===key))delete modules[key]});
 const reorderedModules={};adminFlowOrder.forEach(([key])=>{if(modules[key])reorderedModules[key]=modules[key]});Object.keys(modules).forEach(key=>delete modules[key]);Object.assign(modules,reorderedModules);
 if(uiAccess&&uiAccess.moderator)['siteMap','news','notices','invitations','memberMessages'].forEach(k=>uiAccess.moderator.add(k));
@@ -142,7 +141,7 @@ function buildNav(){
 }
 
 const siteFlowSections=[
-  {no:'01',title:'\u00dcst men\u00fc ve kahraman alan\u0131',desc:'Logo, ana men\u00fc, \u00fcyelik giri\u015fi, ana g\u00f6rsel, slogan ve \u00e7a\u011fr\u0131 butonlar\u0131.',mods:['homeSettings','menus','settings']},
+  {no:'01',title:'\u00dcst men\u00fc ve kahraman alan\u0131',desc:'Logo, ana men\u00fc, \u00fcyelik giri\u015fi, ana g\u00f6rsel, slogan ve \u00e7a\u011fr\u0131 butonlar\u0131.',mods:['menus','settings']},
   {no:'02',title:'Peyzajder g\u00fcndemi',desc:'Kahraman alan\u0131n\u0131n alt\u0131ndaki b\u00fcy\u00fck g\u00fcndem slayt\u0131, haber, etkinlik ve duyuru ak\u0131\u015f\u0131.',mods:['sliders','news','events','notices']},
   {no:'03',title:'Sa\u011f a\u00e7\u0131l\u0131r yar\u0131\u015fma duyurusu',desc:'Turuncu yandan a\u00e7\u0131l\u0131r yar\u0131\u015fma panosu ve yeni yar\u0131\u015fma rozeti.',mods:['promoPanels']},
   {no:'04',title:'Kurumsal alan',desc:'Hakk\u0131m\u0131zda metinleri, y\u00f6netim kurulu, denetleme kurulu ve di\u011fer kurullar.',mods:['boards','content','menus']},
