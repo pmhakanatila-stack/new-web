@@ -200,14 +200,27 @@ async function loadHomeStreams(){
 }
 
 async function applyMemberHeader(){
+  const account=document.querySelector('.header-account');
+  if(!account)return;
+  const showPanel=(href,label)=>{
+    account.innerHTML=`<a class="login-link" href="${href}">Panelime git</a><a class="button button-small" href="${href}">${streamEsc(label)}</a>`;
+  };
   try{
     const response=await fetch(apiPath('/api/member/me'),{credentials:'same-origin'});
+    if(response.ok){
+      const member=await response.json();
+      const name=String(member.name||member.fullName||'Üye').split(/\s+/)[0];
+      showPanel('member-portal.html',name);
+      return;
+    }
+  }catch{}
+  try{
+    const response=await fetch(apiPath('/api/me'),{credentials:'same-origin'});
     if(!response.ok)return;
-    const member=await response.json();
-    const account=document.querySelector('.header-account');
-    if(!account)return;
-    const name=streamEsc(String(member.name||member.fullName||'Üye').split(/\s+/)[0]);
-    account.innerHTML=`<a class="login-link" href="member-portal.html">Panelime git</a><a class="button button-small" href="member-portal.html">${name}</a>`;
+    const session=await response.json(),role=String(session.role||'admin').toLowerCase();
+    const destinations={sayman:'sayman.html',moderator:'moderator.html',author:'writer-panel.html',admin:'admin.html'};
+    const labels={sayman:'Sayman Paneli',moderator:'Moderatör Paneli',author:'Yazar Paneli',admin:'Yönetim Paneli'};
+    showPanel(destinations[role]||'admin.html',labels[role]||'Yönetim Paneli');
   }catch{}
 }
 
