@@ -807,4 +807,40 @@ openView=async function(view){
   return renderSmartModule(view);
 };
 
+function installAdminMobileMenu(){
+  const app=$('#appView'),sidebar=app?.querySelector(':scope>aside'),header=app?.querySelector('main>header');
+  if(!app||!sidebar||!header||$('#adminMenuToggle'))return;
+  sidebar.id='adminSidebar';
+  const backdrop=document.createElement('button');
+  backdrop.id='adminMenuBackdrop';
+  backdrop.className='admin-menu-backdrop';
+  backdrop.type='button';
+  backdrop.tabIndex=-1;
+  backdrop.setAttribute('aria-label','Yönetim menüsünü kapat');
+  const toggle=document.createElement('button');
+  toggle.id='adminMenuToggle';
+  toggle.className='admin-menu-toggle';
+  toggle.type='button';
+  toggle.setAttribute('aria-controls','adminSidebar');
+  toggle.setAttribute('aria-expanded','false');
+  toggle.setAttribute('aria-label','Yönetim menüsünü aç');
+  toggle.innerHTML='<span></span><span></span><span></span>';
+  sidebar.after(backdrop);
+  header.prepend(toggle);
+  const setOpen=open=>{
+    app.classList.toggle('menu-open',Boolean(open));
+    document.body.classList.toggle('admin-nav-open',Boolean(open));
+    toggle.setAttribute('aria-expanded',open?'true':'false');
+    toggle.setAttribute('aria-label',open?'Yönetim menüsünü kapat':'Yönetim menüsünü aç');
+  };
+  toggle.onclick=()=>setOpen(!app.classList.contains('menu-open'));
+  backdrop.onclick=()=>setOpen(false);
+  $('#nav').addEventListener('click',event=>{
+    if(event.target.closest('[data-view]')&&matchMedia('(max-width:800px)').matches)setOpen(false);
+  });
+  document.addEventListener('keydown',event=>{if(event.key==='Escape')setOpen(false)});
+  addEventListener('resize',()=>{if(!matchMedia('(max-width:800px)').matches)setOpen(false)});
+}
+
+installAdminMobileMenu();
 boot();

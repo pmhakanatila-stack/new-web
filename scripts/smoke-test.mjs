@@ -25,7 +25,7 @@ try{
   const created=await request('/api/content',{method:'POST',cookie:adminCookie,body:{title,category:'haberler',summary:'Türkçe içerik',body:'İçerik metni',status:'Yayında'}});
   const item=await request(`/api/content/${created.data.id}`,{cookie:adminCookie});if(item.data.title!==title)throw new Error('Türkçe içerik korunmadı');
   const email=`smoke-${Date.now()}@example.test`;
-  const registration=await request('/api/register',{method:'POST',body:{name:'Öykü Çağlar',email,password:'Deneme!2026',membershipType:'Kurumsal'}}),memberCookie=registration.cookie;
+  const registration=await request('/api/register',{method:'POST',body:{name:'Öykü Çağlar',email,phone:'0532 555 12 34',password:'Deneme!2026',membershipType:'Kurumsal'}}),memberCookie=registration.cookie;
   const pending=await request('/api/member/me',{cookie:memberCookie});if(pending.data.membershipApproved||pending.data.panelType!=='application')throw new Error('Onaysız üye yanlış panele yönlendirildi');
   await request('/api/member/application',{method:'POST',cookie:memberCookie,body:{membershipType:'Kurumsal',organization:'Çınar Peyzaj',name:'form.png',data:'data:image/png;base64,iVBORw0KGgo='}});
   const applications=await request('/api/applications',{cookie:adminCookie}),application=applications.data.find(x=>x.email===email);if(!application)throw new Error('Üyelik başvurusu admin paneline düşmedi');
@@ -36,7 +36,7 @@ try{
   await request('/api/member/messages',{method:'POST',cookie:memberCookie,body:{message:'Yönetim için deneme mesajı'}});
   const memberMessages=await request('/api/memberMessages',{cookie:adminCookie});if(!memberMessages.data.some(x=>x.email===email&&x.message.includes('deneme mesajı')))throw new Error('Üye mesajı yönetime ulaşmadı');
   const individualEmail=`individual-${Date.now()}@example.test`;
-  const individualRegistration=await request('/api/register',{method:'POST',body:{name:'İpek Öğrenci',email:individualEmail,password:'Deneme!2026',membershipType:'Öğrenci'}}),individualCookie=individualRegistration.cookie;
+  const individualRegistration=await request('/api/register',{method:'POST',body:{name:'İpek Öğrenci',email:individualEmail,phone:'0533 555 12 34',password:'Deneme!2026',membershipType:'Öğrenci'}}),individualCookie=individualRegistration.cookie;
   await request('/api/member/application',{method:'POST',cookie:individualCookie,body:{membershipType:'Öğrenci',name:'form.png',data:'data:image/png;base64,iVBORw0KGgo='}});
   const individualApplications=await request('/api/applications',{cookie:adminCookie}),individualApplication=individualApplications.data.find(x=>x.email===individualEmail);
   await request(`/api/applications/${individualApplication.id}`,{method:'PUT',cookie:adminCookie,body:{status:'Onaylandı'}});

@@ -1,5 +1,5 @@
 .app > aside{
-  z-index:20;
+  z-index:50;
 }
 
 .app > aside .logo,
@@ -33,22 +33,6 @@
 
 .logout{
   margin-top:12px;
-}
-
-@media(max-width:700px){
-  .app > aside{
-    width:86px;
-    padding-inline:12px;
-  }
-
-  .app main{
-    margin-left:86px;
-  }
-
-  .app nav button{
-    justify-content:center;
-    font-size:17px;
-  }
 }
 
 .app main aside,

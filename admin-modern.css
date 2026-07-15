@@ -362,6 +362,79 @@
   .site-map-grid{grid-template-columns:1fr}
 }
 
+.admin-menu-toggle,
+.admin-menu-backdrop{display:none}
+
+@media(max-width:800px){
+  body.admin-nav-open{overflow:hidden}
+  .app>aside{
+    width:min(320px,86vw);
+    padding:18px 14px;
+    transform:translateX(-105%);
+    transition:transform .28s ease;
+    z-index:50;
+    box-shadow:20px 0 60px rgba(4,20,11,.32);
+  }
+  .app.menu-open>aside{transform:translateX(0)}
+  .app aside .logo span,.nav-group summary span,.app nav button span,.logout span{display:block}
+  .app aside .logo{padding-bottom:14px}
+  .app nav{padding-right:5px}
+  .nav-group summary{justify-content:space-between}
+  .app nav button{justify-content:flex-start;font-size:14px}
+  .admin-menu-backdrop{
+    position:fixed;
+    inset:0;
+    z-index:40;
+    border:0;
+    background:rgba(5,23,13,.58);
+    backdrop-filter:blur(3px);
+  }
+  .app.menu-open>.admin-menu-backdrop{display:block}
+  .app main{width:100%;margin-left:0;padding:0 16px 28px;overflow:hidden}
+  .app main>header{
+    position:sticky;
+    top:0;
+    display:grid;
+    grid-template-columns:44px minmax(0,1fr) auto;
+    align-items:center;
+    gap:12px;
+    min-height:72px;
+    margin:0 -16px 18px;
+    padding:10px 16px;
+    z-index:20;
+  }
+  .app main>header>div{min-width:0}
+  .app main h1{font-size:clamp(20px,6vw,25px);line-height:1.08;overflow-wrap:anywhere}
+  .app main>header small{font-size:11px}
+  .app main>header>.primary{padding:11px 12px;font-size:12px;white-space:nowrap}
+  .admin-menu-toggle{
+    width:44px;
+    height:44px;
+    border:1px solid #d5ddd4;
+    border-radius:12px;
+    background:#173523;
+    display:grid;
+    place-content:center;
+    gap:5px;
+    cursor:pointer;
+  }
+  .admin-menu-toggle span{display:block;width:19px;height:2px;background:#e7f3c0;border-radius:99px}
+  .module-console-hero{min-width:0;padding:18px}
+  .module-console-hero h2{font-size:clamp(25px,8vw,34px);line-height:1.08}
+  .module-console-hero p{font-size:14px;line-height:1.6}
+  .module-kpi-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .site-map-hero{align-items:flex-start;flex-direction:column;padding:22px;border-radius:16px}
+  .overview-cards,.stat-grid{grid-template-columns:1fr}
+  .panel,.overview-panel,.analytics-panel{padding:18px}
+  dialog{width:calc(100vw - 24px);max-height:92vh}
+  #editorForm{padding:20px}
+}
+
+@media(max-width:420px){
+  .app main>header>.primary{max-width:105px;white-space:normal;line-height:1.15}
+  .module-kpi-grid{grid-template-columns:1fr}
+}
+
 .content-category-console .module-console-hero,
 .home-settings-console .module-console-hero{background:linear-gradient(135deg,#f8faf4,#eef4e9)}
 .content-editor-grid textarea{min-height:96px;resize:vertical}
