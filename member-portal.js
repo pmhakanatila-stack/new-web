@@ -149,6 +149,16 @@ function renderJobs(jobs=[]){
   box.innerHTML=jobs.length?`<h4>İlan taleplerim</h4>${jobs.map(j=>`<div class="job-row"><b>${j.title}</b><span>${j.type||'İlan'} · ${j.location||''}</span><em>${j.status||'Onay bekliyor'}</em></div>`).join('')}`:'<p class="hint">Henüz ilan talebiniz yok.</p>';
 }
 
+function renderInvitations(items=[]){
+  const box=document.querySelector('#invitationList');if(!box)return;
+  box.innerHTML=items.length?items.map(x=>`<article class="job-row"><div><small>${x.date?new Date(x.date).toLocaleDateString('tr-TR'):'DAVETİYE'}</small><b>${x.title||'PEYZAJDER etkinliği'}</b><p>${x.message||x.description||''}</p>${x.location?`<a href="${x.location}" target="_blank" rel="noopener">Yer / bağlantı →</a>`:''}</div></article>`).join(''):'<p class="hint">Üyelik türünüze gönderilmiş güncel davetiye bulunmuyor.</p>';
+}
+
+function renderMemberMessages(items=[]){
+  const box=document.querySelector('#memberMessageList');if(!box)return;
+  box.innerHTML=items.length?items.map(x=>`<div class="job-row"><b>${x.direction||'Mesaj'}</b><span>${x.message||''}</span><em>${new Date(x.createdAt||Date.now()).toLocaleString('tr-TR')}</em></div>`).join(''):'<p class="hint">Henüz mesaj yok.</p>';
+}
+
 async function loadJobs(){
   try{const r=await fetch(apiPath('/api/member/jobs'),{credentials:'same-origin'});if(r.ok)renderJobs(await r.json())}catch{}
 }
@@ -166,6 +176,8 @@ async function load(){
   renderFees(d.finance||{});
   const showCorporatePanel=d.panelType==='corporate';
   setPortalMode(d);
+  renderInvitations(d.invitations||[]);
+  renderMemberMessages(d.messages||[]);
   if(showCorporatePanel){
     fillCompany(d.company||{email:d.email,phone:d.phone,city:d.city,name:d.application?.organization||''});
     loadJobs();
@@ -212,6 +224,11 @@ document.querySelector('#companyForm').addEventListener('submit',async e=>{
 document.querySelector('#jobForm').addEventListener('submit',async e=>{
   e.preventDefault();jobMessage.textContent='İlan talebi gönderiliyor…';
   try{const data=Object.fromEntries(new FormData(e.target));data.company=document.querySelector('#companyForm').name.value||member.application?.organization||member.name;const r=await fetch(apiPath('/api/member/jobs'),{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify(data)});const d=await r.json();if(!r.ok)throw new Error(d.error||'İlan gönderilemedi');jobMessage.textContent='İlan talebiniz onaya gönderildi.';e.target.reset();loadJobs()}catch(x){jobMessage.textContent=x.message}
+});
+
+document.querySelector('#memberMessageForm').addEventListener('submit',async e=>{
+  e.preventDefault();const status=document.querySelector('#memberMessageStatus');status.textContent='Mesaj gönderiliyor…';
+  try{const data=Object.fromEntries(new FormData(e.target));const r=await fetch(apiPath('/api/member/messages'),{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify(data)});const d=await r.json();if(!r.ok)throw new Error(d.error||'Mesaj gönderilemedi');e.target.reset();status.textContent='Mesajınız yönetime iletildi.';await load()}catch(x){status.textContent=x.message}
 });
 
 document.querySelector('#logout').onclick=async()=>{await fetch(apiPath('/api/member/logout'),{credentials:'same-origin'});location.href='member-login.html'};

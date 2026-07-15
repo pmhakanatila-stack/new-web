@@ -34,8 +34,8 @@ function cleanText(value){
 }
 const excerpt=(x,limit=125)=>{const text=cleanText(x.summary)||cleanText(x.body)||'PEYZAJDER gündeminden güncel içerik';return streamEsc(text.length>limit?`${text.slice(0,Math.max(0,limit-3)).trim()}...`:text)};
 const featuredFallbackImage='assets/hero-landscape-award.png';
-const featuredCategoryLinks={Haber:'archive.html?cat=haberler',Etkinlik:'archive.html?cat=etkinlikler',Duyuru:'archive.html?cat=duyurular',Gündem:'archive.html'};
-const streamFallbackLinks={haberler:'archive.html?cat=haberler',etkinlikler:'archive.html?cat=etkinlikler',duyurular:'archive.html?cat=duyurular'};
+const featuredCategoryLinks={Haber:'news.html',Etkinlik:'events.html',Duyuru:'notices.html',Gündem:'news.html'};
+const streamFallbackLinks={haberler:'news.html',etkinlikler:'events.html',duyurular:'notices.html'};
 
 function prepareStreams(){
   const first=document.querySelector('.stream-column');
@@ -44,9 +44,15 @@ function prepareStreams(){
     first.classList.add('stream-news');
     first.querySelector('small').textContent='GÜNCEL HABERLER';
     first.querySelector('h3').textContent='Haberler';
+    const allLink=first.querySelector('header a');
+    if(allLink)allLink.href=streamFallbackLinks.haberler;
     const target=first.querySelector('[data-stream]');
     if(target)target.dataset.stream='haberler';
   }
+  document.querySelectorAll('[data-stream]').forEach(container=>{
+    const link=container.closest('.stream-column')?.querySelector('header a');
+    if(link&&streamFallbackLinks[container.dataset.stream])link.href=streamFallbackLinks[container.dataset.stream];
+  });
   const heading=document.querySelector('.streams-heading');
   if(heading){
     const streamTitle=heading.querySelector('h2');
@@ -193,7 +199,30 @@ async function loadHomeStreams(){
   }
 }
 
+async function applyMemberHeader(){
+  try{
+    const response=await fetch(apiPath('/api/member/me'),{credentials:'same-origin'});
+    if(!response.ok)return;
+    const member=await response.json();
+    const account=document.querySelector('.header-account');
+    if(!account)return;
+    const name=streamEsc(String(member.name||member.fullName||'Üye').split(/\s+/)[0]);
+    account.innerHTML=`<a class="login-link" href="member-portal.html">Panelime git</a><a class="button button-small" href="member-portal.html">${name}</a>`;
+  }catch{}
+}
+
+async function applyPublicMenus(){
+  try{
+    const response=await fetch(apiPath('/api/public/menus'),{cache:'no-store'});if(!response.ok)return;
+    const items=await response.json(),mains=items.filter(x=>!x.parent);if(!mains.length)return;
+    const nav=document.querySelector('.main-nav');if(!nav)return;
+    nav.innerHTML=mains.map((main,i)=>{const children=items.filter(x=>String(x.parent||'').toLocaleLowerCase('tr-TR')===String(main.title||'').toLocaleLowerCase('tr-TR'));const link=`<a class="nav-tile" href="${streamEsc(main.url||'#')}"><span>${String(i+1).padStart(2,'0')}</span>${streamEsc(main.title)}</a>`;return children.length?`<div class="nav-dropdown">${link}<div class="dropdown-menu">${children.map(x=>`<a href="${streamEsc(x.url||'#')}">${streamEsc(x.title)}</a>`).join('')}</div></div>`:link}).join('');
+  }catch{}
+}
+
 loadHomeStreams();
+applyMemberHeader();
+applyPublicMenus();
 
 async function loadHomeSponsors(){
   const strip=document.querySelector('.sponsor-strip');

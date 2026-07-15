@@ -8,6 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="member-portal.css?v=20260714-company">
+  <script src="config.js"></script>
 </head>
 <body>
   <aside class="portal-side">
@@ -17,6 +18,8 @@
       <a href="#profile" data-approved-only hidden>Kişisel bilgilerim</a>
       <a href="#company" data-corporate-only hidden>Firma paneli</a>
       <a href="#companyJobs" data-corporate-only hidden>İlan taleplerim</a>
+      <a href="#invitations" data-approved-only hidden>Davetiyelerim</a>
+      <a href="#managementMessages" data-approved-only hidden>Yönetimle mesajlaşma</a>
       <a href="archive.html">İçerik merkezi</a>
       <a href="index.html#rehber" data-member-only hidden>Firma rehberi</a>
     </nav>
@@ -86,6 +89,21 @@
         <p>Onaylı bireysel ve öğrenci üyeler firma rehberinde şirket adı, şehir ve faaliyet alanlarına göre arama yapabilir.</p>
       </div>
       <a class="portal-button" href="index.html#rehber">Firma rehberini aç →</a>
+    </section>
+    <section id="invitations" class="profile-card" data-approved-only hidden>
+      <div><span class="number">06</span><h3>Etkinlik davetiyelerim</h3><p>Yönetimin üyelik türünüze gönderdiği güncel davetiyeler burada görünür.</p></div>
+      <div id="invitationList" class="job-list"><p class="hint">Davetiye bulunmuyor.</p></div>
+    </section>
+    <section id="managementMessages" class="profile-card" data-approved-only hidden>
+      <div><span class="number">07</span><h3>Yönetimle mesajlaşma</h3><p>Üyelik ve dernek işlemleri hakkında yönetime doğrudan mesaj gönderebilirsiniz.</p></div>
+      <div>
+        <div id="memberMessageList" class="job-list"><p class="hint">Henüz mesaj yok.</p></div>
+        <form id="memberMessageForm" class="profile-form">
+          <label class="wide">Mesajınız<textarea name="message" required></textarea></label>
+          <button class="portal-button">Yönetime gönder →</button>
+          <p id="memberMessageStatus"></p>
+        </form>
+      </div>
     </section>
     <section id="company" class="company-card" data-corporate-only hidden>
       <div class="company-head">

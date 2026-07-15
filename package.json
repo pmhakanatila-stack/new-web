@@ -4,7 +4,11 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "start": "node server.mjs"
+    "start": "node server.mjs",
+    "check:syntax": "node scripts/check-syntax.mjs",
+    "check:encoding": "node scripts/check-encoding.mjs",
+    "test:smoke": "node scripts/smoke-test.mjs",
+    "test": "npm run check:syntax && npm run check:encoding && npm run test:smoke"
   },
   "engines": {
     "node": ">=20"

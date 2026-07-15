@@ -51,7 +51,7 @@ function renderGroups(items){
         <div><p>KURUMSAL YAPI</p><h2>${esc(group)}</h2><small>${members.length} kayıt</small></div>
       </div>
       <div class="board-grid">
-        ${members.map((x,i)=>{const portrait=hasPortrait(x.photo);return`<article class="board-card ${i===0&&group==='Y?netim Kurulu'?'featured':''}">
+        ${members.map((x,i)=>{const portrait=hasPortrait(x.photo);return`<article class="board-card ${i===0&&group==='Yönetim Kurulu'?'featured':''}">
           <div class="portrait ${portrait?'':'placeholder'}">${portrait?`<img src="${esc(x.photo)}" alt="${esc(x.name)}">`:`<span>${esc((x.name||'').split(' ').map(y=>y[0]).slice(0,2).join(''))}</span>`}</div>
           <div>
             <small>${esc(x.role||'Kurul Üyesi')}</small>

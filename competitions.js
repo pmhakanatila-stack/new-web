@@ -27,7 +27,7 @@ function emptyMessage(type){
 
 function card(item,type){
   const x=normalize(item);
-  const label=type==='active_competitions'?'Aktif yar?ma':type==='result_competitions'?'Sonu?land?':'Tamamland?';
+  const label=type==='active_competitions'?'Aktif yarışma':type==='result_competitions'?'Sonuçlandı':'Tamamlandı';
   return `<article class="competition-card">
     <div class="competition-media">${x.image?`<img src="${esc(x.image)}" alt="${esc(x.title)}">`:'<span>PEYZAJDER</span>'}</div>
     <div class="competition-copy">
