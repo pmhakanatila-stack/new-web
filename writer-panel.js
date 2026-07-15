@@ -35,6 +35,7 @@ function showWriterPreview(url){
 function resetForm(){
   currentEdit=null;
   form.reset();
+  window.PeyzajRichEditor?.setValue(form.body,'');
   showWriterPreview('');
   form.querySelector('button').textContent='Onaya gönder →';
   msg.textContent='';
@@ -63,7 +64,7 @@ function editItem(id){
   form.title.value=item.title||'';
   if(form.image)form.image.value=item.image||'';
   form.summary.value=item.summary||'';
-  form.body.value=item.body||'';
+  window.PeyzajRichEditor?.setValue(form.body,item.body||'');
   showWriterPreview(item.image||'');
   form.querySelector('button').textContent='Güncelle ve tekrar onaya gönder →';
   msg.textContent='Yazınızı düzenliyorsunuz. Kaydedince durum tekrar Beklemede olur.';
@@ -81,6 +82,7 @@ async function deleteItem(id){
 }
 form.addEventListener('submit',async e=>{
   e.preventDefault();
+  window.PeyzajRichEditor?.sync(form.body);
   msg.textContent=currentEdit?'Yazınız güncelleniyor…':'Yazınız gönderiliyor…';
   try{
     const payload=JSON.stringify(Object.fromEntries(new FormData(e.target)));

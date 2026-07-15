@@ -392,7 +392,7 @@ function isImageField(key,label){return ['image','cover','photo','logo'].include
 function genericFieldHtml(field,item){
   const [key,label,type,opt]=field,v=escapeHtml(item?.[key]||'');
   if(isImageField(key,label))return`<label class="full image-field">${label}<input class="auto-webp-file" data-target="${key}" type="file" accept="image/*"><input id="field-${key}" name="${key}" type="text" value="${v}" placeholder="Dosya seçildiğinde WebP olarak yüklenecek"><small>Site görselleri JPG/PNG yüklense bile WebP olarak sıkıştırılıp saklanır.</small>${v?`<img class="content-image-preview" src="${v}" alt="">`:''}</label>`;
-  if(type==='textarea')return`<label class="full">${label}<textarea name="${key}">${v}</textarea></label>`;
+  if(type==='textarea'){const rich=key==='body'||(state.view==='events'&&key==='description');return`<label class="full">${label}<textarea name="${key}"${rich?' data-rich-editor':''}>${v}</textarea></label>`}
   if(type==='select')return`<label>${label}<select name="${key}">${opt.split(',').map(o=>`<option ${o===(item?.[key]||'')?'selected':''}>${o}</option>`).join('')}</select></label>`;
   return`<label>${label}<input name="${key}" type="${type}" value="${v}"></label>`;
 }
@@ -510,7 +510,7 @@ function openContentCategoryEditor(item=null,view=state.view){
     <label class="full">Başlık<input name="title" type="text" value="${escapeHtml(item?.title||'')}" required></label>
     <label class="full">SEO açıklama<textarea name="seoDescription" maxlength="180" placeholder="Google ve paylaşım özetinde görünecek 150-160 karakterlik açıklama">${escapeHtml(item?.seoDescription||item?.summary||'')}</textarea></label>
     <label class="full">Kısa özet<textarea name="summary" placeholder="Ana sayfa kartları ve slayt kısa metni">${escapeHtml(item?.summary||'')}</textarea></label>
-    <label class="full">İçerik<textarea name="body" rows="9" placeholder="${escapeHtml(cfg.singular)} detay metni">${escapeHtml(item?.body||'')}</textarea></label>
+    <label class="full">İçerik<textarea name="body" rows="9" data-rich-editor placeholder="${escapeHtml(cfg.singular)} detay metni">${escapeHtml(item?.body||'')}</textarea></label>
     <label>Durum<select name="status">${['Yayında','Taslak','Beklemede','Pasif'].map(s=>`<option ${s===(item?.status||'Yayında')?'selected':''}>${s}</option>`).join('')}</select></label>
     <label>Tarih<input name="date" type="date" value="${escapeHtml(String(item?.date||item?.createdAt||'').slice(0,10))}"></label>
     <label class="full image-field">Görsel yükle<input id="contentImageFile" type="file" accept="image/*"><input id="contentImagePath" name="image" type="text" value="${escapeHtml(item?.image||'')}" placeholder="Yüklendiğinde otomatik dolacak"><small>JPG/PNG/WebP yükleyebilirsiniz; sistem WebP olarak hafifletip kaydeder.</small>${item?.image?`<img class="content-image-preview" src="${escapeHtml(item.image)}" alt="">`:''}</label>
@@ -529,6 +529,7 @@ openEditor=function(item=null){
   $('#formFields').innerHTML=`<div class="field-grid">${(schemas[state.view]||[F.title,F.description,F.status]).map(field=>genericFieldHtml(field,item)).join('')}</div>`;
   $('#editor').showModal();
   bindAutoWebpUploads($('#formFields'));
+  window.PeyzajRichEditor?.mountAll($('#formFields'));
 };
 
 const moduleAdminMeta={
