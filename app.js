@@ -203,14 +203,13 @@ async function applyMemberHeader(){
   const account=document.querySelector('.header-account');
   if(!account)return;
   const showPanel=(href,label)=>{
-    account.innerHTML=`<a class="login-link" href="${href}">Panelime git</a><a class="button button-small" href="${href}">${streamEsc(label)}</a>`;
+    account.innerHTML=`<a class="button button-small" href="${href}">${streamEsc(label)}</a>`;
   };
   try{
     const response=await fetch(apiPath('/api/member/me'),{credentials:'same-origin'});
     if(response.ok){
       const member=await response.json();
-      const name=String(member.name||member.fullName||'Üye').split(/\s+/)[0];
-      showPanel('member-portal.html',name);
+      showPanel('member-portal.html','Panelime Git');
       return;
     }
   }catch{}
