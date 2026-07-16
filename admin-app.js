@@ -189,7 +189,13 @@ const money=n=>(Number(n)||0).toLocaleString('tr-TR',{minimumFractionDigits:2,ma
 const norm=s=>String(s||'').trim().toLocaleLowerCase('tr-TR');
 const memberName=m=>m.name||m.email||m.phone||'\u0130simsiz \u00fcye';
 const memberCategory=m=>m.group||m.memberGroup||m.membershipType||m.memberType||m.category||'Genel';
-const isActiveMember=m=>!['pasif','reddedildi','silindi'].includes(norm(m.status));
+const managementMemberWords=['admin','yönetici','yonetici','moderatör','moderator','sayman','muhasebe','editör','editor','yazar'];
+const isManagementMemberValue=value=>managementMemberWords.some(word=>norm(value).includes(word));
+const isMemberCategoryName=value=>!isManagementMemberValue(value);
+const isActiveMember=m=>{
+  const status=norm(m.membershipStatus||m.status),identity=`${m.role||''} ${m.systemRole||''} ${memberCategory(m)} ${String(m.email||'').split('@')[0]}`;
+  return !['pasif','reddedildi','silindi'].includes(status)&&!isManagementMemberValue(identity)&&(status.includes('onay')||status.includes('aktif'))&&!status.includes('bekle');
+};
 const dueRemaining=d=>Math.max(0,(Number(d.amount)||0)-(Number(d.paid)||0));
 
 function periodListForTariff(t){
@@ -211,12 +217,14 @@ async function renderDuesManager(){
   const [members,groups,tariffs,dues,payments,settings]=await Promise.all(['members','memberGroups','duePeriods','dues','payments','settings'].map(safe));
   const entryFeeSetting=(settings||[]).find(x=>['membershipentryfee','uyelikgirisbedeli','üyelik giriş bedeli'].includes(norm(x.key||x.title)));
   const entryFeeValue=entryFeeSetting?.value||'';
-  const membershipGroups=groups.length?groups:[{title:'Bireysel',entryFee:0,order:1,status:'Aktif'},{title:'Kurumsal',entryFee:0,order:2,status:'Aktif'},{title:'Öğrenci',entryFee:0,order:3,status:'Aktif'}];
+  const membershipGroups=(groups.length?groups:[{title:'Bireysel',entryFee:0,order:1,status:'Aktif'},{title:'Kurumsal',entryFee:0,order:2,status:'Aktif'},{title:'Öğrenci',entryFee:0,order:3,status:'Aktif'}]).filter(g=>isMemberCategoryName(g.title||g.name));
   const activeMembers=members.filter(isActiveMember);
+  const activeMemberIds=new Set(activeMembers.map(m=>String(m.id)));
+  const memberDues=dues.filter(d=>activeMemberIds.has(String(d.memberId||'')));
   const categories=[...new Set(['T\u00fcm \u00fcyeler',...membershipGroups.map(g=>g.title||g.name).filter(Boolean),...activeMembers.map(memberCategory).filter(Boolean)])];
-  const totalDebt=dues.reduce((s,d)=>s+(Number(d.amount)||0),0);
-  const totalPaid=dues.reduce((s,d)=>s+(Number(d.paid)||0),0);
-  const unpaid=dues.filter(d=>dueRemaining(d)>0);
+  const totalDebt=memberDues.reduce((s,d)=>s+(Number(d.amount)||0),0);
+  const totalPaid=memberDues.reduce((s,d)=>s+(Number(d.paid)||0),0);
+  const unpaid=memberDues.filter(d=>dueRemaining(d)>0);
   const byCategory=categories.filter(c=>c!=='T\u00fcm \u00fcyeler').map(c=>({name:c,count:activeMembers.filter(m=>norm(memberCategory(m))===norm(c)).length}));
   $('#workspace').innerHTML=`<section class="dues-pro">
     <div class="dues-hero">
@@ -226,6 +234,7 @@ async function renderDuesManager(){
     <div class="dues-grid">
       <form id="duesTariffForm" class="dues-card">
         <h3>Aidat tarifesi</h3>
+        <input name="id" type="hidden">
         <div class="field-grid">
           <label>Tarife ad\u0131<input name="title" required value="${new Date().getFullYear()} Aidat Tarifesi"></label>
           <label>\u00dcye kategorisi<select name="group">${categories.map(c=>`<option>${escapeHtml(c)}</option>`).join('')}</select></label>
@@ -234,13 +243,14 @@ async function renderDuesManager(){
           <label>Tutar<input name="amount" type="number" min="0" step="0.01" required placeholder="0.00"></label>
           <label>Son \u00f6deme g\u00fcn\u00fc<input name="dueDay" type="number" min="1" max="28" value="15"></label>
         </div>
-        <button class="primary" type="submit">Tarifeyi kaydet</button>
+        <div class="dues-form-actions"><button class="primary" type="submit">Tarifeyi kaydet</button><button id="cancelTariffEdit" type="button" hidden>Vazgeç</button></div>
+        <div class="dues-tariff-list">${tariffs.length?tariffs.map(t=>`<article><span><b>${escapeHtml(t.title||'Tarife')}</b><small>${escapeHtml(t.group||'Tüm üyeler')} · ${escapeHtml(t.frequency||'Aylık')} · ${escapeHtml(t.year||'')} · ${money(t.amount)}</small></span><div><button type="button" data-tariff-edit="${t.id}">Düzenle</button><button type="button" data-tariff-delete="${t.id}">Sil</button></div></article>`).join(''):'<p class="empty">Henüz aidat tarifesi tanımlanmadı.</p>'}</div>
       </form>
       <section class="dues-card">
         <h3>Otomatik bor\u00e7land\u0131rma</h3>
         <p>Kay\u0131tl\u0131 tarifeyi se\u00e7in; sistem aktif \u00fcyeleri kategorilerine g\u00f6re bulur, d\u00f6nemleri olu\u015fturur ve ayn\u0131 borcu ikinci kez yazmaz.</p>
         <label>Tarife<select id="duesTariffSelect">${tariffs.map(t=>`<option value="${t.id}">${escapeHtml(t.title||'Tarife')} \u00b7 ${escapeHtml(t.group||'T\u00fcm \u00fcyeler')} \u00b7 ${money(t.amount)}</option>`).join('')}</select></label>
-        <button id="generateDues" class="primary" type="button" ${tariffs.length?'':'disabled'}>Se\u00e7ili tarifeye g\u00f6re bor\u00e7land\u0131r</button>
+        <div class="dues-form-actions"><button id="generateDues" class="primary" type="button" ${tariffs.length?'':'disabled'}>Se\u00e7ili tarifeye g\u00f6re bor\u00e7land\u0131r</button><button id="rollbackDues" type="button" ${tariffs.length?'':'disabled'}>Tarifenin borçlarını geri al</button><button id="deduplicateDues" type="button">Mükerrer kayıtları temizle</button></div>
         <div class="dues-category-list">${byCategory.map(c=>`<span>${escapeHtml(c.name)} <b>${c.count}</b></span>`).join('')}</div>
       </section>
       <form id="entryFeeForm" class="dues-card">
@@ -252,7 +262,7 @@ async function renderDuesManager(){
       </form>
     </div>
     <section class="dues-card">
-      <div class="dues-toolbar"><h3>\u00dcye aidat durumu</h3><div><select id="duesYear">${[...new Set([new Date().getFullYear(),...dues.map(d=>Number(String(d.period||'').slice(0,4))).filter(Boolean),...tariffs.map(t=>Number(t.year)).filter(Boolean)])].sort((a,b)=>b-a).map(y=>`<option>${y}</option>`).join('')}</select><input id="duesSearch" placeholder="\u00dcye, kategori veya d\u00f6nem ara..."><select id="duesFilter"><option value="">T\u00fcm\u00fc</option><option value="unpaid">\u00d6demeyenler</option><option value="paid">\u00d6deyenler</option></select></div></div>
+      <div class="dues-toolbar"><h3>\u00dcye aidat durumu</h3><div><button id="duesPdfReport" type="button">PDF raporu oluştur</button><select id="duesYear">${[...new Set([new Date().getFullYear(),...memberDues.map(d=>Number(String(d.period||'').slice(0,4))).filter(Boolean),...tariffs.map(t=>Number(t.year)).filter(Boolean)])].sort((a,b)=>b-a).map(y=>`<option>${y}</option>`).join('')}</select><input id="duesSearch" placeholder="\u00dcye, kategori veya d\u00f6nem ara..."><select id="duesFilter"><option value="">T\u00fcm\u00fc</option><option value="unpaid">\u00d6demeyenler</option><option value="paid">\u00d6deyenler</option></select></div></div>
       <div class="dues-table-wrap"><table class="dues-table"><thead><tr><th>\u00dcye</th><th>Kategori</th><th>Y\u0131l</th><th>Y\u0131ll\u0131k bor\u00e7</th><th>\u00d6denen</th><th>Kalan</th><th>Y\u0131ll\u0131k durum</th><th>\u0130\u015flem</th></tr></thead><tbody id="duesRows"></tbody></table></div>
     </section>
   </section>`;
@@ -266,7 +276,7 @@ async function renderDuesManager(){
     const month=new Date(Number(y),Number(m)-1,1).toLocaleDateString('tr-TR',{month:'long'});
     return `${String(month).charAt(0).toLocaleUpperCase('tr-TR')}${String(month).slice(1)} ${y}`;
   };
-  const annualGroups=()=>{const year=String($('#duesYear')?.value||new Date().getFullYear());const seed={};activeMembers.forEach(m=>{const key=`${m.id}-${year}`;seed[key]={key,memberId:m.id,member:memberName(m),email:m.email||'',category:memberCategory(m),year,items:[],amount:0,paid:0}});return Object.values(dues.filter(d=>dueYear(d)===year).reduce((acc,d)=>{
+  const annualGroups=()=>{const year=String($('#duesYear')?.value||new Date().getFullYear());const seed={};activeMembers.forEach(m=>{const key=`${m.id}-${year}`;seed[key]={key,memberId:m.id,member:memberName(m),email:m.email||'',category:memberCategory(m),year,items:[],amount:0,paid:0}});return Object.values(memberDues.filter(d=>dueYear(d)===year).reduce((acc,d)=>{
     const key=`${d.memberId||d.member||d.memberEmail}-${dueYear(d)}`;
     if(!acc[key])acc[key]={key,memberId:d.memberId||'',member:d.member||'\u00dcye',email:d.memberEmail||'',category:d.category||'Genel',year:dueYear(d),items:[],amount:0,paid:0};
     acc[key].items.push(d);acc[key].amount+=Number(d.amount)||0;acc[key].paid+=Number(d.paid)||0;
@@ -284,13 +294,24 @@ async function renderDuesManager(){
   };
   $('#duesSearch').oninput=draw;$('#duesFilter').onchange=draw;$('#duesYear').onchange=draw;draw();
 
+  $('#duesPdfReport').onclick=()=>{
+    const year=String($('#duesYear').value||new Date().getFullYear()),rows=annualGroups().sort((a,b)=>String(a.category).localeCompare(String(b.category),'tr')||String(a.member).localeCompare(String(b.member),'tr'));
+    const debt=rows.reduce((sum,row)=>sum+row.amount,0),paid=rows.reduce((sum,row)=>sum+row.paid,0),remaining=Math.max(0,debt-paid),popup=window.open('','_blank','noopener,noreferrer');
+    if(!popup)return toast('PDF raporu için açılır pencereye izin verin');
+    popup.document.write(`<!doctype html><html lang="tr"><head><meta charset="utf-8"><title>PEYZAJDER ${escapeHtml(year)} Aidat Raporu</title><style>@page{size:A4;margin:15mm}*{box-sizing:border-box}body{font:12px/1.45 Arial,sans-serif;color:#14271d;margin:0}header{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:3px solid #163f2b;padding-bottom:14px;margin-bottom:20px}h1{font-size:24px;margin:0}header p{margin:4px 0 0;color:#627066}.summary{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px}.summary div{border:1px solid #ccd6ce;padding:12px}.summary small{display:block;color:#627066;text-transform:uppercase}.summary b{font-size:17px}table{border-collapse:collapse;width:100%}th,td{padding:8px;border-bottom:1px solid #d9e0da;text-align:left}th{background:#edf2ed;font-size:10px;text-transform:uppercase}td.num{text-align:right}footer{margin-top:18px;color:#627066;font-size:10px}.no-print{margin:0 0 16px;padding:10px 16px;background:#163f2b;color:#fff;border:0;font-weight:700}@media print{.no-print{display:none}}</style></head><body><button class="no-print" onclick="window.print()">PDF olarak kaydet / Yazdır</button><header><div><h1>PEYZAJDER Aidat Raporu</h1><p>${escapeHtml(year)} yılı · Ön muhasebe özeti</p></div><b>${new Date().toLocaleDateString('tr-TR')}</b></header><section class="summary"><div><small>Toplam borç</small><b>${money(debt)}</b></div><div><small>Tahsil edilen</small><b>${money(paid)}</b></div><div><small>Kalan</small><b>${money(remaining)}</b></div></section><table><thead><tr><th>Üye</th><th>Kategori</th><th>Dönem</th><th>Borç</th><th>Ödenen</th><th>Kalan</th><th>Durum</th></tr></thead><tbody>${rows.map(row=>`<tr><td><b>${escapeHtml(row.member)}</b><br><small>${escapeHtml(row.email)}</small></td><td>${escapeHtml(row.category)}</td><td>${row.items.length}</td><td class="num">${money(row.amount)}</td><td class="num">${money(row.paid)}</td><td class="num">${money(row.remaining)}</td><td>${row.remaining>0?'Bekliyor':'Ödendi'}</td></tr>`).join('')||'<tr><td colspan="7">Bu yıl için aidat kaydı yok.</td></tr>'}</tbody></table><footer>Bu belge PEYZAJDER ön muhasebe sisteminden oluşturulmuştur. Resmî mali müşavir raporu değildir.</footer><script>setTimeout(()=>window.print(),350)<\/script></body></html>`);
+    popup.document.close();
+  };
+
+  const tariffForm=$('#duesTariffForm'),resetTariffForm=()=>{tariffForm.reset();tariffForm.elements.id.value='';tariffForm.elements.title.value=`${new Date().getFullYear()} Aidat Tarifesi`;tariffForm.elements.year.value=new Date().getFullYear();$('#cancelTariffEdit').hidden=true};
+  document.querySelectorAll('[data-tariff-edit]').forEach(button=>button.onclick=()=>{const tariff=tariffs.find(t=>t.id===button.dataset.tariffEdit);if(!tariff)return;for(const key of ['id','title','group','frequency','year','amount','dueDay'])if(tariffForm.elements[key])tariffForm.elements[key].value=tariff[key]??'';$('#cancelTariffEdit').hidden=false;tariffForm.scrollIntoView({behavior:'smooth',block:'start'})});
+  document.querySelectorAll('[data-tariff-delete]').forEach(button=>button.onclick=async()=>{const tariff=tariffs.find(t=>t.id===button.dataset.tariffDelete);if(!tariff||!confirm(`“${tariff.title||'Tarife'}” silinsin mi? Oluşturulmuş geçmiş aidat kayıtları korunur.`))return;try{await api(`duePeriods/${tariff.id}`,{method:'DELETE'});toast('Aidat tarifesi silindi');renderDuesManager()}catch(error){toast(error.message)}});
+  $('#cancelTariffEdit').onclick=resetTariffForm;
   $('#duesTariffForm').onsubmit=async e=>{
     e.preventDefault();
     const data=Object.fromEntries(new FormData(e.target));
+    const id=data.id;delete data.id;
     data.amount=Number(data.amount)||0;data.year=Number(data.year)||new Date().getFullYear();data.dueDay=Number(data.dueDay)||15;data.status='Aktif';
-    await api('duePeriods',{method:'POST',body:JSON.stringify(data)});
-    toast('Aidat tarifesi kaydedildi');
-    renderDuesManager();
+    try{await api(id?`duePeriods/${id}`:'duePeriods',{method:id?'PUT':'POST',body:JSON.stringify(data)});toast(id?'Aidat tarifesi güncellendi':'Aidat tarifesi kaydedildi');renderDuesManager()}catch(error){toast(error.message)}
   };
   $('#entryFeeForm').onsubmit=async e=>{
     e.preventDefault();
@@ -306,28 +327,16 @@ async function renderDuesManager(){
     toast('Kategori bazlı giriş bedelleri kaydedildi');
     renderDuesManager();
   };
-  $('#generateEntryFees').onclick=async()=>{let created=0;for(const m of activeMembers){const group=membershipGroups.find(g=>norm(g.title||g.name)===norm(memberCategory(m))),amount=Number(group?.entryFee)||0,year=new Date(m.createdAt||Date.now()).getFullYear(),period=`${year}-GIRIS`;if(amount<=0||dues.some(d=>String(d.memberId)===String(m.id)&&(d.kind==='entryFee'||d.period===period)))continue;await api('dues',{method:'POST',body:JSON.stringify({kind:'entryFee',memberId:m.id,member:memberName(m),memberEmail:m.email||'',category:memberCategory(m),period,amount,paid:0,dueDate:`${year}-12-31`,status:'Beklemede'})});created++}toast(`${created} eksik giriş bedeli kayıt yılına eklendi`);renderDuesManager()};
+  $('#generateEntryFees').onclick=async()=>{let created=0;for(const m of activeMembers){const group=membershipGroups.find(g=>norm(g.title||g.name)===norm(memberCategory(m))),amount=Number(group?.entryFee)||0,year=new Date(m.createdAt||Date.now()).getFullYear(),period=`${year}-GIRIS`;if(amount<=0||memberDues.some(d=>String(d.memberId)===String(m.id)&&(d.kind==='entryFee'||d.period===period)))continue;await api('dues',{method:'POST',body:JSON.stringify({kind:'entryFee',memberId:m.id,member:memberName(m),memberEmail:m.email||'',category:memberCategory(m),period,amount,paid:0,dueDate:`${year}-12-31`,status:'Beklemede'})});created++}toast(`${created} eksik giriş bedeli kayıt yılına eklendi`);renderDuesManager()};
   $('#generateDues').onclick=async()=>{
     const tariff=tariffs.find(t=>t.id===$('#duesTariffSelect').value);
     if(!tariff)return toast('Bor\u00e7land\u0131rma i\u00e7in \u00f6nce tarife se\u00e7in');
-    const target=activeMembers.filter(m=>tariff.group==='T\u00fcm \u00fcyeler'||!tariff.group||norm(memberCategory(m))===norm(tariff.group));
-    const periods=periodListForTariff(tariff);
-    let created=0,skipped=0;
-    for(const m of target){
-      for(const period of periods){
-        const exists=dues.some(d=>String(d.memberId||'')===String(m.id)&&String(d.period||'')===period&&String(d.tariffId||'')===String(tariff.id));
-        if(exists){skipped++;continue}
-        const [y,mo]=period.split('-').map(Number),day=Math.min(Number(tariff.dueDay)||15,28);
-        const dueDate=mo?new Date(y,mo-1,day).toISOString().slice(0,10):`${period}-12-31`;
-        await api('dues',{method:'POST',body:JSON.stringify({memberId:m.id,member:memberName(m),memberEmail:m.email||'',category:memberCategory(m),period,tariffId:tariff.id,amount:Number(tariff.amount)||0,paid:0,dueDate,status:'Beklemede'})});
-        created++;
-      }
-    }
-    toast(`${created} aidat borcu olu\u015fturuldu${skipped?`, ${skipped} tekrar atland\u0131`:''}`);
-    renderDuesManager();
+    try{const result=await api('finance/dues/generate',{method:'POST',body:JSON.stringify({tariffId:tariff.id})});toast(`${result.created} aidat borcu oluşturuldu${result.skipped?`, ${result.skipped} mevcut dönem atlandı`:''}`);renderDuesManager()}catch(error){toast(error.message)}
   };
+  $('#rollbackDues').onclick=async()=>{const tariff=tariffs.find(t=>t.id===$('#duesTariffSelect').value);if(!tariff||!confirm(`“${tariff.title||'Tarife'}” ile oluşturulan ve tahsilat yapılmamış borçlar geri alınsın mı?`))return;try{const result=await api('finance/dues/rollback',{method:'POST',body:JSON.stringify({tariffId:tariff.id})});toast(`${result.removed} aidat kaydı geri alındı`);renderDuesManager()}catch(error){toast(error.message)}};
+  $('#deduplicateDues').onclick=async()=>{if(!confirm('Aynı üye ve aynı dönem için oluşmuş, tahsilat yapılmamış mükerrer borçlar temizlensin mi?'))return;try{const result=await api('finance/dues/deduplicate',{method:'POST',body:'{}'});toast(`${result.removed} mükerrer kayıt temizlendi${result.protectedGroups?`, tahsilat bulunan ${result.protectedGroups} grup korundu`:''}`);renderDuesManager()}catch(error){toast(error.message)}};
   async function markDuePaid(id){
-    const due=dues.find(d=>d.id===id);if(!due)return;
+    const due=memberDues.find(d=>d.id===id);if(!due)return;
     const remaining=dueRemaining(due);
     const val=prompt('\u00d6denen tutar',String(remaining));
     if(val===null)return;
@@ -340,7 +349,7 @@ async function renderDuesManager(){
     toast('\u00d6deme i\u015flendi ve bor\u00e7tan d\u00fc\u015f\u00fcld\u00fc');
     renderDuesManager();
   }
-  async function markDueUnpaid(id){const due=dues.find(d=>d.id===id);if(!due||!confirm('Bu dönem ödenmedi durumuna geri alınsın mı?'))return;const reversal=Number(due.paid)||0;await api(`dues/${id}`,{method:'PUT',body:JSON.stringify({...due,paid:0,status:'Beklemede'})});if(reversal>0){await api('payments',{method:'POST',body:JSON.stringify({member:due.member,memberId:due.memberId,dueId:id,amount:-reversal,date:new Date().toISOString().slice(0,10),method:'Düzeltme',status:'İptal / düzeltme'})});try{await api('businessLedger',{method:'POST',body:JSON.stringify({title:`Tahsilat düzeltmesi - ${due.member}`,date:new Date().toISOString().slice(0,10),type:'Gider',amount:reversal,description:`${due.period} dönemi ödeme geri alma kaydı`})})}catch{}}toast('Dönem ödenmedi durumuna alındı');renderDuesManager()}
+  async function markDueUnpaid(id){const due=memberDues.find(d=>d.id===id);if(!due||!confirm('Bu dönem ödenmedi durumuna geri alınsın mı?'))return;const reversal=Number(due.paid)||0;await api(`dues/${id}`,{method:'PUT',body:JSON.stringify({...due,paid:0,status:'Beklemede'})});if(reversal>0){await api('payments',{method:'POST',body:JSON.stringify({member:due.member,memberId:due.memberId,dueId:id,amount:-reversal,date:new Date().toISOString().slice(0,10),method:'Düzeltme',status:'İptal / düzeltme'})});try{await api('businessLedger',{method:'POST',body:JSON.stringify({title:`Tahsilat düzeltmesi - ${due.member}`,date:new Date().toISOString().slice(0,10),type:'Gider',amount:reversal,description:`${due.period} dönemi ödeme geri alma kaydı`})})}catch{}}toast('Dönem ödenmedi durumuna alındı');renderDuesManager()}
 }
 
 async function renderAutoSliderManager(){

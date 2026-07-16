@@ -29,10 +29,12 @@ async function loadMemberTypes(){
   if(!select)return;
   try{
     const types=await fetch(apiPath('/api/public/member-types'),{cache:'no-store'}).then(r=>r.json());
-    if(Array.isArray(types)&&types.length){
-      select.innerHTML=types.map(t=>`<option value="${String(t.title||'').replace(/"/g,'&quot;')}">${t.title}</option>`).join('');
+    const forbidden=['admin','yönetici','yonetici','moderatör','moderator','sayman','muhasebe','editör','editor','yazar'];
+    const publicTypes=(Array.isArray(types)?types:[]).filter(t=>!forbidden.some(word=>String(t.title||'').toLocaleLowerCase('tr-TR').includes(word)));
+    if(publicTypes.length){
+      select.innerHTML=publicTypes.map(t=>`<option value="${String(t.title||'').replace(/"/g,'&quot;')}">${t.title}</option>`).join('');
       const renderFee=()=>{
-        const current=types.find(t=>t.title===select.value);
+        const current=publicTypes.find(t=>t.title===select.value);
         if(fee)fee.textContent=`Tek seferlik giriş bedeli: ${(Number(current.entryFee)||0).toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2})} ₺`;
       };
       select.addEventListener('change',renderFee);

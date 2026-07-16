@@ -269,6 +269,16 @@
 .entry-fee-list input{margin:0;background:#fff!important;text-align:right;font-weight:900}
 .dues-card .primary,.dues-card button.primary{min-height:50px;background:#123d26;color:#fff;border:0;padding:0 18px;font-weight:900;cursor:pointer;margin-top:14px}
 .dues-card button:disabled{opacity:.45;cursor:not-allowed}
+.dues-form-actions{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:14px}
+.dues-form-actions .primary{margin-top:0!important}
+.dues-form-actions button:not(.primary),.dues-toolbar button{min-height:44px;border:1px solid #b9c8bc;background:#f5f8f3;color:#173d29;padding:0 14px;font-weight:850;cursor:pointer}
+.dues-tariff-list{display:grid;gap:8px;margin-top:18px;padding-top:16px;border-top:1px solid #e1e7df}
+.dues-tariff-list article{display:flex;align-items:center;justify-content:space-between;gap:12px;border:1px solid #dfe6dc;background:#f8faf7;padding:11px 12px}
+.dues-tariff-list span{min-width:0}
+.dues-tariff-list b,.dues-tariff-list small{display:block}
+.dues-tariff-list small{margin-top:3px;color:#6b796f}
+.dues-tariff-list article>div{display:flex;gap:6px}
+.dues-tariff-list button{border:1px solid #c8d3c8;background:#fff;padding:8px 10px;color:#173d29;font-weight:800;cursor:pointer}
 .dues-category-list{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}
 .dues-category-list span{background:#f0f5ec;border:1px solid #dce6d6;color:#244b34;padding:8px 10px;font-size:13px}
 .dues-category-list b{background:#bdda68;color:#123d26;border-radius:999px;padding:2px 7px;margin-left:6px}

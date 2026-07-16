@@ -9,6 +9,7 @@ let server;
 function start(nextPort=port){port=nextPort;base=`http://127.0.0.1:${port}`;server=spawn(process.execPath,['server.mjs'],{cwd:process.cwd(),env:{...process.env,PORT:String(port),PEYZAJDER_HOST:'127.0.0.1',PEYZAJDER_DATA_DIR:temp,PEYZAJDER_UPLOAD_DIR:join(temp,'uploads'),PEYZAJDER_ADMIN_USER:'smoke-admin',PEYZAJDER_ADMIN_PASSWORD:'Smoke!2026'},stdio:['ignore','pipe','pipe']})}
 async function ready(){for(let i=0;i<80;i++){try{if((await fetch(`${base}/api/public/home`)).ok)return}catch{}await new Promise(r=>setTimeout(r,100))}throw new Error('Sunucu başlamadı')}
 async function request(path,{method='GET',body,cookie}={}){const response=await fetch(`${base}${path}`,{method,headers:{...(body?{'Content-Type':'application/json'}:{}),...(cookie?{Cookie:cookie}:{})},body:body?JSON.stringify(body):undefined});const text=await response.text();let data;try{data=JSON.parse(text)}catch{throw new Error(`${path}: JSON yerine ${response.status} ${text.slice(0,100)}`)}if(!response.ok)throw new Error(`${path}: ${response.status} ${data.error||text}`);return{data,cookie:response.headers.get('set-cookie')?.split(';')[0]||cookie,status:response.status}}
+async function requestFailure(path,options={}){try{await request(path,options)}catch(error){return error}throw new Error(`${path}: işlemin başarısız olması bekleniyordu`)}
 function stop(){return new Promise(resolve=>{if(!server||server.exitCode!==null)return resolve();server.once('exit',resolve);server.kill();setTimeout(resolve,1500).unref()})}
 
 try{
@@ -16,6 +17,9 @@ try{
   const health=await request('/api/health');if(!health.data.ok)throw new Error('Sağlık kontrolü başarısız');
   const home=await request('/api/public/home');if(!Array.isArray(home.data.haberler)||home.data.haberler.length<1)throw new Error('Başlangıç içerikleri yüklenmedi');
   const login=await request('/api/login',{method:'POST',body:{username:'smoke-admin',password:'Smoke!2026'}}),adminCookie=login.cookie;
+  await request('/api/memberGroups',{method:'POST',cookie:adminCookie,body:{title:'Köşe Yazarı',status:'Aktif'}});
+  const publicMemberTypes=await request('/api/public/member-types');if(publicMemberTypes.data.some(x=>String(x.title).toLocaleLowerCase('tr-TR').includes('yazar')))throw new Error('Köşe yazarı ziyaretçi üyelik seçeneklerine sızdı');
+  const forbiddenRegistration=await requestFailure('/api/register',{method:'POST',body:{name:'Deneme Yazar',email:`writer-${Date.now()}@example.test`,phone:'0532 555 44 33',password:'Deneme!2026',membershipType:'Köşe Yazarı'}});if(!String(forbiddenRegistration.message).includes('400'))throw forbiddenRegistration;
   for(const collection of ['content','events','boards','members','firms','applications','dues','articles','sponsors','users','invitations','memberMessages']){const result=await request(`/api/${collection}`,{cookie:adminCookie});if(!Array.isArray(result.data))throw new Error(`${collection} liste değil`)}
   const title='UTF-8 doğrulama: Çığ, ıhlamur, öğrenci ve şüphe';
   await request('/api/settings',{method:'POST',cookie:adminCookie,body:{key:'site.name',title:'Site kısa adı',value:'PEYZAJDER TEST',status:'Aktif'}});
@@ -44,7 +48,15 @@ try{
   const individualApplications=await request('/api/applications',{cookie:adminCookie}),individualApplication=individualApplications.data.find(x=>x.email===individualEmail);
   await request(`/api/applications/${individualApplication.id}`,{method:'PUT',cookie:adminCookie,body:{status:'Onaylandı'}});
   const individualApproved=await request('/api/member/me',{cookie:individualCookie});if(!individualApproved.data.membershipApproved||individualApproved.data.panelType!=='member'||individualApproved.data.isCorporate)throw new Error('Bireysel/öğrenci panel yönlendirmesi hatalı');
+  await request('/api/members',{method:'POST',cookie:adminCookie,body:{name:'Sistem Yöneticisi',email:'admin-account@peyzajder.org',group:'Admin',membershipStatus:'Onaylandı',status:'Aktif Üye'}});
+  const tariff=await request('/api/duePeriods',{method:'POST',cookie:adminCookie,body:{title:'Smoke yıllık aidat',group:'Tüm üyeler',frequency:'Yıllık',year:2026,amount:1200,dueDay:15,status:'Aktif'}});
+  const firstGeneration=await request('/api/finance/dues/generate',{method:'POST',cookie:adminCookie,body:{tariffId:tariff.data.id}});if(firstGeneration.data.created!==2)throw new Error(`Aidat yalnız gerçek üyeler için üretilmedi: ${firstGeneration.data.created}`);
+  const generatedDues=await request('/api/dues',{cookie:adminCookie}),sampleDue=generatedDues.data.find(x=>x.tariffId===tariff.data.id);await request('/api/dues',{method:'POST',cookie:adminCookie,body:{...sampleDue,id:undefined,batchId:'legacy-duplicate',paid:0}});
+  const deduplicated=await request('/api/finance/dues/deduplicate',{method:'POST',cookie:adminCookie,body:{}});if(deduplicated.data.removed!==1)throw new Error('Mükerrer aidat temizleme işlemi başarısız');
+  const secondGeneration=await request('/api/finance/dues/generate',{method:'POST',cookie:adminCookie,body:{tariffId:tariff.data.id}});if(secondGeneration.data.created!==0||secondGeneration.data.skipped!==2)throw new Error('Aidat yeniden hesaplamada mükerrer borç oluşturdu');
+  const rollback=await request('/api/finance/dues/rollback',{method:'POST',cookie:adminCookie,body:{tariffId:tariff.data.id}});if(rollback.data.removed!==2)throw new Error('Aidat borçlandırması geri alınamadı');
+  const remainingDues=await request('/api/dues',{cookie:adminCookie});if(remainingDues.data.some(x=>x.tariffId===tariff.data.id))throw new Error('Geri alınan aidat kayıtları silinmedi');
   await stop();start(port+1);await ready();
   const persisted=JSON.parse(await readFile(join(temp,'cms.json'),'utf8'));if(!persisted.content.some(x=>x.title===title))throw new Error('Sunucu yeniden başlayınca veri kayboldu');if(persisted.content.some(x=>/^https?:\/\/(?:www\.)?peyzajder\.org/i.test(String(x.sourceUrl||''))))throw new Error('Eski kaynak bağlantısı kalıcı veriden temizlenmedi');
-  console.log('API, site özelleştirme, üyelik onayı, bireysel/kurumsal panel ayrımı, davetiye, mesajlaşma, Türkçe veri ve yeniden başlatma testi başarılı.');
+  console.log('API, site özelleştirme, üyelik onayı, yazar kategori koruması, aidat mükerrer/geri alma kontrolü, davetiye, mesajlaşma, Türkçe veri ve yeniden başlatma testi başarılı.');
 }finally{await stop();await rm(temp,{recursive:true,force:true})}
