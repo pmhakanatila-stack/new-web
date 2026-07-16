@@ -184,7 +184,7 @@ function publicSponsorGroups(placement){
 function publicContentItem(x,type='Gündem'){
   const clean=v=>String(v||'').replace(/var\s+approachingEvent;/gi,'').replace(/var\s+content_slider;/gi,'').replace(/google-site-verification=[^\s]+/gi,'').replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim();
   const body=sanitizeRichHtml(x.body||x.description||'');
-  return{id:x.id,title:clean(x.title||x.name||''),category:x.category||'',type,summary:clean(x.summary||x.description||body.slice(0,220)),body,image:x.image||x.cover||'',date:x.date||x.createdAt||'',author:x.author||'',sourceUrl:isLegacyPeyzajderSource(x.sourceUrl)?'':x.sourceUrl||''};
+  return{id:x.id,title:clean(x.title||x.name||''),category:x.category||'',type,summary:clean(x.summary||x.description||body.slice(0,220)),body,image:x.image||x.cover||'',images:Array.isArray(x.images)?x.images.filter(Boolean):[],date:x.date||x.createdAt||'',author:x.author||'',sourceUrl:isLegacyPeyzajderSource(x.sourceUrl)?'':x.sourceUrl||''};
 }
 
 async function api(req,res,url){

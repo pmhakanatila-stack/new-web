@@ -7,9 +7,11 @@
     "start": "node server.mjs",
     "check:syntax": "node scripts/check-syntax.mjs",
     "check:encoding": "node scripts/check-encoding.mjs",
+    "check:legacy-content": "node scripts/check-legacy-content.mjs",
     "clean:legacy-links": "node scripts/clean-legacy-links.mjs",
+    "migrate:legacy-news-images": "node scripts/apply-legacy-news-images.mjs seed-cms.json",
     "test:smoke": "node scripts/smoke-test.mjs",
-    "test": "npm run check:syntax && npm run check:encoding && npm run test:smoke"
+    "test": "npm run check:syntax && npm run check:encoding && npm run check:legacy-content && npm run test:smoke"
   },
   "engines": {
     "node": ">=20"
