@@ -16,6 +16,7 @@
     <nav>
       <a class="active" href="#application" data-pending-only>Dernek üyeliği</a>
       <a href="#profile" data-approved-only hidden>Kişisel bilgilerim</a>
+      <a href="#payment" data-approved-only hidden>Ödeme bilgileri</a>
       <a href="#company" data-corporate-only hidden>Firma paneli</a>
       <a href="#companyJobs" data-corporate-only hidden>İlan taleplerim</a>
       <a href="#invitations" data-approved-only hidden>Davetiyelerim</a>
@@ -80,6 +81,22 @@
         <label>Meslek / uzmanlık<input name="profession"></label>
         <button class="portal-button">Bilgilerimi kaydet →</button>
         <p id="profileMessage"></p>
+      </form>
+    </section>
+    <section id="payment" class="payment-card" data-approved-only hidden>
+      <div class="payment-head">
+        <div><span class="number">04</span><h3>Ödeme bilgileri</h3><p>Üyeliğiniz onaylandığı için dernek banka hesabı ve üyelik türünüze ait ödeme bilgileri kullanıma açıldı.</p></div>
+        <span class="badge">Onaylı üye</span>
+      </div>
+      <div id="paymentInfo" class="payment-info"><p class="hint">Ödeme bilgileri yükleniyor…</p></div>
+      <form id="paymentNotificationForm" class="payment-form">
+        <h4>Ödeme bildiriminde bulun</h4>
+        <label>Ödeme türü<select name="paymentType"><option>Üyelik giriş bedeli</option><option>Aidat</option><option>Diğer</option></select></label>
+        <label>Tutar<input name="amount" type="number" min="0.01" step="0.01" required></label>
+        <label>Ödeme tarihi<input name="paymentDate" type="date" required></label>
+        <label class="wide">Dekont <input id="paymentReceipt" type="file" accept=".pdf,.jpg,.jpeg,.png" required><small>PDF, JPG veya PNG; en fazla 1 MB.</small></label>
+        <button class="portal-button">Dekontu saymana gönder →</button>
+        <p id="paymentMessage"></p>
       </form>
     </section>
     <section id="memberDirectory" class="profile-card" data-member-only hidden>

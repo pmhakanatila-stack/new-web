@@ -2,6 +2,7 @@ const message=document.querySelector('#uploadMessage');
 const profileMessage=document.querySelector('#profileMessage');
 const companyMessage=document.querySelector('#companyMessage');
 const jobMessage=document.querySelector('#jobMessage');
+const paymentMessage=document.querySelector('#paymentMessage');
 const file=document.querySelector('#document');
 const logoInput=document.querySelector('#companyLogo');
 const apiPath=path=>window.peyzajderApiPath?window.peyzajderApiPath(path):path;
@@ -11,6 +12,8 @@ const MAX_APPLICATION_SIZE=1024*1024;
 const money=n=>(Number(n)||0).toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2})+' ₺';
 const norm=s=>String(s||'').trim().toLocaleLowerCase('tr-TR');
 const isCorporateType=value=>norm(value).includes('kurumsal');
+const escapeHtml=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+const formatIban=value=>String(value||'').replace(/\s+/g,'').replace(/(.{4})/g,'$1 ').trim();
 
 const activityGroups={
   'Tasarım ve Projelendirme':['Peyzaj Mimari Proje Tasarımı','Kentsel Tasarım','Çevre Düzenleme Projeleri','Uygulama Projeleri','3D Görselleştirme ve Animasyon','Keşif, Metraj ve Maliyet Analizi','Master Plan Hazırlama','Rekreasyon Alanı Tasarımı','Park ve Bahçe Tasarımı','Çatı ve Teras Bahçesi Tasarımı','Dikey Bahçe Tasarımı'],
@@ -150,6 +153,24 @@ function renderJobs(jobs=[]){
   box.innerHTML=jobs.length?`<h4>İlan taleplerim</h4>${jobs.map(j=>`<div class="job-row"><b>${j.title}</b><span>${j.type||'İlan'} · ${j.location||''}</span><em>${j.status||'Onay bekliyor'}</em></div>`).join('')}`:'<p class="hint">Henüz ilan talebiniz yok.</p>';
 }
 
+function renderPaymentInfo(finance={},profile={}){
+  const box=document.querySelector('#paymentInfo');if(!box)return;
+  const bank=finance.bankAccount,balance=finance.balance||{},tariff=finance.currentTariff;
+  if(!profile.membershipApproved||!bank){box.innerHTML='<p class="hint">Ödeme bilgileri üyelik onayından sonra gösterilir.</p>';return}
+  box.innerHTML=`<div class="payment-bank">
+    <div><small>ALICI</small><b>${escapeHtml(bank.accountName||'PEYZAJDER')}</b></div>
+    <div><small>IBAN</small><b class="iban">${escapeHtml(formatIban(bank.iban))}</b><button id="copyIban" type="button">IBAN'ı kopyala</button></div>
+    <div><small>ÖDEME AÇIKLAMASI</small><b>${escapeHtml(finance.paymentReference||'')}</b></div>
+  </div>
+  <div class="payment-summary">
+    <article><small>Üyelik giriş bedeli</small><b>${Number(finance.entryFee)>0?money(finance.entryFee):'Tanımlanmadı'}</b></article>
+    <article><small>Güncel aidat</small><b>${tariff?`${money(tariff.amount)} / ${escapeHtml(tariff.frequency||'dönem')}`:'Tanımlanmadı'}</b></article>
+    <article><small>Toplam kalan borç</small><b>${money(balance.remaining||0)}</b></article>
+  </div>
+  <p class="payment-note">Havale açıklamasına yukarıdaki ödeme açıklamasını aynen yazın. Ödeme yaptıktan sonra dekontunuzu aşağıdaki formdan saymana iletin.</p>`;
+  document.querySelector('#copyIban').onclick=async()=>{try{await navigator.clipboard.writeText(String(bank.iban||''));paymentMessage.textContent='IBAN kopyalandı.'}catch{paymentMessage.textContent='IBAN kopyalanamadı; elle seçebilirsiniz.'}};
+}
+
 function renderInvitations(items=[]){
   const box=document.querySelector('#invitationList');if(!box)return;
   box.innerHTML=items.length?items.map(x=>`<article class="job-row"><div><small>${x.date?new Date(x.date).toLocaleDateString('tr-TR'):'DAVETİYE'}</small><b>${x.title||'PEYZAJDER etkinliği'}</b><p>${x.message||x.description||''}</p>${x.location?`<a href="${x.location}" target="_blank" rel="noopener">Yer / bağlantı →</a>`:''}</div></article>`).join(''):'<p class="hint">Üyelik türünüze gönderilmiş güncel davetiye bulunmuyor.</p>';
@@ -175,6 +196,7 @@ async function load(){
   await loadMemberTypes(selectedType);
   fillProfile(d);
   renderFees(d.finance||{});
+  renderPaymentInfo(d.finance||{},d);
   const showCorporatePanel=d.panelType==='corporate';
   setPortalMode(d);
   renderInvitations(d.invitations||[]);
@@ -238,6 +260,11 @@ document.querySelector('#companyForm').addEventListener('submit',async e=>{
   try{const data=Object.fromEntries(new FormData(e.target));data.logo=companyLogoData;data.activities=activities;const r=await fetch(apiPath('/api/member/company'),{method:'PUT',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify(data)});const d=await r.json();if(!r.ok)throw new Error(d.error||'Firma kartı kaydedilemedi');companyMessage.textContent='Firma kartınız yayınlandı ve Firma Bulucu alanına eklendi.';fillCompany(d)}catch(x){companyMessage.textContent=x.message}
 });
 
+document.querySelector('#paymentNotificationForm').addEventListener('submit',async e=>{
+  e.preventDefault();const receipt=document.querySelector('#paymentReceipt'),selected=receipt.files?.[0];if(!selected)return;if(selected.size>MAX_APPLICATION_SIZE){paymentMessage.textContent='Dekont en fazla 1 MB olabilir.';receipt.value='';return}paymentMessage.textContent='Ödeme bildiriminiz gönderiliyor…';
+  const reader=new FileReader();reader.onload=async()=>{try{const data=Object.fromEntries(new FormData(e.target));data.data=reader.result;data.name=selected.name;const response=await fetch(apiPath('/api/member/payment-notification'),{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify(data)}),result=await response.json();if(!response.ok)throw new Error(result.error||'Ödeme bildirimi gönderilemedi');e.target.reset();e.target.paymentDate.value=new Date().toISOString().slice(0,10);paymentMessage.textContent='Dekontunuz sayman onayına gönderildi.'}catch(error){paymentMessage.textContent=error.message}};reader.readAsDataURL(selected);
+});
+
 document.querySelector('#jobForm').addEventListener('submit',async e=>{
   e.preventDefault();jobMessage.textContent='İlan talebi gönderiliyor…';
   try{const data=Object.fromEntries(new FormData(e.target));data.company=document.querySelector('#companyForm').name.value||member.application?.organization||member.name;const r=await fetch(apiPath('/api/member/jobs'),{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify(data)});const d=await r.json();if(!r.ok)throw new Error(d.error||'İlan gönderilemedi');jobMessage.textContent='İlan talebiniz onaya gönderildi.';e.target.reset();loadJobs()}catch(x){jobMessage.textContent=x.message}
@@ -256,4 +283,5 @@ setMemberArea(false);
 setPendingArea(true);
 renderActivities();
 toggleOrganizationField();
+document.querySelector('#paymentNotificationForm').paymentDate.value=new Date().toISOString().slice(0,10);
 load();

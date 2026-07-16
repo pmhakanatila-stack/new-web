@@ -64,6 +64,15 @@ for(const [title,order] of defaultMemberTypes){
 if(memberTypesChanged){
   await save(db);
 }
+const defaultBankSeedKey='finance.defaultBankSeeded.v1';
+if(!(db.settings||[]).some(x=>x.key===defaultBankSeedKey)){
+  const iban='TR740011100000000162599985';
+  if(!(db.bankAccounts||[]).some(x=>String(x.iban||'').replace(/\s+/g,'').toUpperCase()===iban)){
+    db.bankAccounts.unshift({id:`bankAccounts-${Date.now()}-${randomBytes(3).toString('hex')}`,bank:'Dernek banka hesabı',accountName:'PEYZAJ MİMARLARI VE SEKTÖR PROFESYONELLERİ DERNEĞİ',iban,currency:'TRY',status:'Aktif',createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()});
+  }
+  db.settings.push({id:`settings-${Date.now()}-${randomBytes(3).toString('hex')}`,key:defaultBankSeedKey,title:'Varsayılan dernek banka hesabı aktarımı',value:'Tamamlandı',status:'Aktif',createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()});
+  await save(db);
+}
 if(!db.content.length){try{const source=JSON.parse((await readFile(join(root,'content-data.json'),'utf8')).replace(/^\uFEFF/,''));db.content=source.pages.filter(x=>x.title&&!x.error).map((x,i)=>({id:`content-${i+1}`,title:x.title,category:x.category,status:'Yayında',summary:x.paragraphs?.[0]||'',body:(x.paragraphs||[]).join('\n\n'),image:x.images?.[0]?.src||'',createdAt:new Date().toISOString()}));db.events=db.content.filter(x=>x.category==='etkinlikler').map(x=>({...x,id:`event-${x.id}`}));await save(db)}catch{}}
 const json=(res,status,data,headers={})=>{res.writeHead(status,{'Content-Type':'application/json; charset=utf-8',...headers});res.end(JSON.stringify(data))};
 const withBase=p=>`${BASE_PATH}${p.startsWith('/')?p:`/${p}`}`;
@@ -160,7 +169,7 @@ async function saveWebpDataUrl(data,prefix){
   await writeFile(join(uploadDir,filename),buf);
   return `uploads/${filename}`;
 }
-function memberFinance(account){
+function memberFinance(account,includePaymentDetails=false){
   const member=(db.members||[]).find(x=>x.accountId===account.id)||account;
   const category=memberCategory(member);
   const nowYear=new Date().getFullYear();
@@ -170,7 +179,15 @@ function memberFinance(account){
   const group=(db.memberGroups||[]).find(g=>normText(g.title||g.name)===normText(category));
   const fallbackEntryFee=Number(String(settingValue(['membershipEntryFee','uyelikGirisBedeli','üyelik giriş bedeli','girisBedeli'],'0')).replace(',','.'))||0;
   const entryFee=Number(String(group?.entryFee??group?.fee??fallbackEntryFee).replace(',','.'))||0;
-  return{category,entryFee,currentTariff:currentTariff?{title:currentTariff.title||'',group:currentTariff.group||'',frequency:currentTariff.frequency||'',year:currentTariff.year||'',amount:Number(currentTariff.amount)||0}:null};
+  const memberDues=(db.dues||[]).filter(d=>String(d.memberId||'')===String(member.id||''));
+  const debt=memberDues.reduce((sum,d)=>sum+(Number(d.amount)||0),0),paid=memberDues.reduce((sum,d)=>sum+(Number(d.paid)||0),0);
+  const finance={category,entryFee,currentTariff:currentTariff?{title:currentTariff.title||'',group:currentTariff.group||'',frequency:currentTariff.frequency||'',year:currentTariff.year||'',amount:Number(currentTariff.amount)||0}:null,balance:{debt,paid,remaining:Math.max(0,debt-paid)}};
+  if(includePaymentDetails){
+    const bank=(db.bankAccounts||[]).find(x=>!['pasif','taslak','arşiv','arsiv'].includes(normText(x.status||'Aktif')));
+    finance.bankAccount=bank?{bank:bank.bank||'',accountName:bank.accountName||'',iban:String(bank.iban||'').replace(/\s+/g,'').toUpperCase(),currency:bank.currency||'TRY'}:null;
+    finance.paymentReference=`${account.name||account.email} - ${category} - Üyelik Giriş Bedeli/Aidat - ${new Date().getFullYear()}`;
+  }
+  return finance;
 }
 function publicSponsorGroups(placement){
   const now=Date.now();
@@ -326,7 +343,12 @@ async function api(req,res,url){
     const audienceMatches=x=>{const targets=String(x.audience||x.target||'Tümü').split(',').map(normText);return targets.some(t=>t==='tümü'||t==='tum üyeler'||t==='tüm üyeler'||t===normText(membershipType)||(corporate&&t==='kurumsal')||(!corporate&&(t==='bireysel & öğrenci'||t==='bireysel/öğrenci')))};
     const invitations=approved?(db.invitations||[]).filter(x=>!['Pasif','Taslak'].includes(String(x.status||'Yayında'))&&audienceMatches(x)).sort((x,y)=>new Date(y.date||y.createdAt||0)-new Date(x.date||x.createdAt||0)):[];
     const messages=approved?(db.memberMessages||[]).filter(x=>x.accountId===a.id||String(x.email||'').toLowerCase()===a.email).sort((x,y)=>new Date(x.createdAt||0)-new Date(y.createdAt||0)):[];
-    return json(res,200,{id:a.id,name:a.name,email:a.email,phone:a.phone,city:a.city,profession:a.profession,role:a.role,membershipType,membershipStatus:a.membershipStatus,membershipApproved:approved,panelType:approved?(corporate?'corporate':'member'):'application',isCorporate:corporate,finance:memberFinance(a),application,company,invitations,messages});
+    return json(res,200,{id:a.id,name:a.name,email:a.email,phone:a.phone,city:a.city,profession:a.profession,role:a.role,membershipType,membershipStatus:a.membershipStatus,membershipApproved:approved,panelType:approved?(corporate?'corporate':'member'):'application',isCorporate:corporate,finance:memberFinance(a,approved),application,company,invitations,messages});
+  }
+  if(url.pathname==='/api/member/payment-notification'&&req.method==='POST'){
+    const s=memberSession(req);if(!s)return json(res,401,{error:'Üye girişi gerekli'});
+    const a=db.accounts.find(x=>x.id===s.accountId),application=db.applications.find(x=>x.accountId===a?.id)||null,member=memberRecordFor(a);if(!a||!membershipApproved(a,application,member))return json(res,403,{error:'Ödeme bildirimi yalnızca onaylı üyeler içindir'});
+    const b=await body(req),amount=Number(String(b.amount||'').replace(',','.'))||0,paymentType=String(b.paymentType||'Aidat').trim(),paymentDate=String(b.paymentDate||new Date().toISOString().slice(0,10)),match=String(b.data||'').match(/^data:([^;]+);base64,(.+)$/),allowed={'application/pdf':'.pdf','image/jpeg':'.jpg','image/png':'.png'};if(amount<=0)return json(res,400,{error:'Geçerli bir ödeme tutarı girin'});if(!match||!allowed[match[1]])return json(res,400,{error:'Dekontu PDF, JPG veya PNG biçiminde yükleyin'});const buffer=Buffer.from(match[2],'base64');if(buffer.length>1024*1024)return json(res,400,{error:'Dekont 1 MB sınırını aşıyor'});const filename=`payment-receipt-${a.id}-${Date.now()}${allowed[match[1]]}`;await writeFile(join(uploadDir,filename),buffer);const item={id:`payments-${Date.now()}-${randomBytes(3).toString('hex')}`,member:member?.name||a.name,memberId:member?.id||'',accountId:a.id,email:a.email,amount,date:paymentDate,method:'Havale',paymentType,receiptUrl:`uploads/${filename}`,status:'Onay bekliyor',createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()};db.payments.unshift(item);audit('Üye ödeme bildirimi gönderdi','payments',item,a.email);await save(db);return json(res,201,{ok:true,status:item.status});
   }
   if(url.pathname==='/api/member/messages'&&req.method==='POST'){
     const s=memberSession(req);if(!s)return json(res,401,{error:'Üye girişi gerekli'});

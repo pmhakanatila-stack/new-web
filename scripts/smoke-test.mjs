@@ -33,11 +33,13 @@ try{
   const publicItem=await request(`/api/public/item?id=${encodeURIComponent(created.data.id)}`);if(publicItem.data.sourceUrl)throw new Error('Eski peyzajder.org kaynak bağlantısı ziyaretçi API’sine sızdı');
   const email=`smoke-${Date.now()}@example.test`;
   const registration=await request('/api/register',{method:'POST',body:{name:'Öykü Çağlar',email,phone:'0532 555 12 34',password:'Deneme!2026',membershipType:'Kurumsal'}}),memberCookie=registration.cookie;
-  const pending=await request('/api/member/me',{cookie:memberCookie});if(pending.data.membershipApproved||pending.data.panelType!=='application')throw new Error('Onaysız üye yanlış panele yönlendirildi');
+  const pending=await request('/api/member/me',{cookie:memberCookie});if(pending.data.membershipApproved||pending.data.panelType!=='application')throw new Error('Onaysız üye yanlış panele yönlendirildi');if(pending.data.finance?.bankAccount)throw new Error('Banka hesabı onaysız üyeye gösterildi');
   await request('/api/member/application',{method:'POST',cookie:memberCookie,body:{membershipType:'Kurumsal',organization:'Çınar Peyzaj',name:'form.png',data:'data:image/png;base64,iVBORw0KGgo='}});
   const applications=await request('/api/applications',{cookie:adminCookie}),application=applications.data.find(x=>x.email===email);if(!application)throw new Error('Üyelik başvurusu admin paneline düşmedi');
   await request(`/api/applications/${application.id}`,{method:'PUT',cookie:adminCookie,body:{status:'Onaylandı'}});
-  const approved=await request('/api/member/me',{cookie:memberCookie});if(!approved.data.membershipApproved||approved.data.panelType!=='corporate')throw new Error('Kurumsal onay panel yönlendirmesi hatalı');
+  const approved=await request('/api/member/me',{cookie:memberCookie});if(!approved.data.membershipApproved||approved.data.panelType!=='corporate')throw new Error('Kurumsal onay panel yönlendirmesi hatalı');if(approved.data.finance?.bankAccount?.iban!=='TR740011100000000162599985')throw new Error('Onaylı üyeye dernek banka hesabı gösterilmedi');
+  await request('/api/member/payment-notification',{method:'POST',cookie:memberCookie,body:{paymentType:'Üyelik giriş bedeli',amount:5000,paymentDate:'2026-07-16',name:'dekont.png',data:'data:image/png;base64,iVBORw0KGgo='}});
+  const paymentNotices=await request('/api/payments',{cookie:adminCookie});if(!paymentNotices.data.some(x=>x.email===email&&x.status==='Onay bekliyor'&&x.receiptUrl))throw new Error('Üye ödeme bildirimi sayman kayıtlarına düşmedi');
   await request('/api/invitations',{method:'POST',cookie:adminCookie,body:{title:'Kurumsal Üye Buluşması',audience:'Kurumsal',message:'Davet metni',status:'Yayında',date:'2026-09-01'}});
   const invited=await request('/api/member/me',{cookie:memberCookie});if(!invited.data.invitations?.some(x=>x.title==='Kurumsal Üye Buluşması'))throw new Error('Kurumsal davetiye üyeye ulaşmadı');
   await request('/api/member/messages',{method:'POST',cookie:memberCookie,body:{message:'Yönetim için deneme mesajı'}});
