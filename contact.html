@@ -10,7 +10,11 @@
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="archive.css">
   <link rel="stylesheet" href="competition-contact.css">
-<script src="config.js"></script><meta name="robots" content="noindex,nofollow"><link rel="stylesheet" href="site-runtime.css?v=20260715"><script src="site-runtime.js?v=20260715" defer></script></head>
+  <script src="config.js"></script>
+  <meta name="robots" content="noindex,nofollow">
+  <link rel="stylesheet" href="site-runtime.css?v=20260716">
+  <script src="site-runtime.js?v=20260716" defer></script>
+</head>
 <body class="archive-body contact-body">
   <header class="archive-header">
     <a class="brand" href="index.html"><span class="brand-mark">P</span><span><strong>PEYZAJDER</strong><small>Peyzaj Mimarları ve Sektör Profesyonelleri Derneği</small></span></a>
@@ -22,30 +26,29 @@
       <h1>Yönetime doğrudan,<br><em>temiz bir kanaldan ulaşın.</em></h1>
       <p>Üyelik, yarışmalar, etkinlikler, firma rehberi ve iş birlikleri için mesajınızı ilgili konu başlığıyla iletin.</p>
     </section>
-
     <section class="contact-grid">
       <article class="contact-info">
         <p class="eyebrow">Dernek bilgileri</p>
-        <h2>Peyzaj Mimarları ve Sektör Profesyonelleri Derneği</h2>
+        <h2 id="contactOrganization">Peyzaj Mimarları ve Sektör Profesyonelleri Derneği</h2>
         <div class="info-list">
           <p><b>Adres</b><span>Alaaddinbey Mah. Taşlıpare Sk. No:69 Nilüfer / Bursa</span></p>
           <p><b>Telefon</b><a href="tel:+905364518100">+90 536 451 81 00</a></p>
           <p><b>E-posta</b><a href="mailto:bilgi@peyzajder.org">bilgi@peyzajder.org</a></p>
+          <p data-contact-hours><b>Çalışma saatleri</b><span>Hafta içi 09.00–17.30</span></p>
           <p><b>Dijital yarışma platformu</b><a href="https://peyzajder.com" target="_blank" rel="noopener">peyzajder.com</a></p>
         </div>
-        <div class="map-card">
-          <span>Harita alanı</span>
+        <a class="map-card" id="contactMap" href="https://maps.google.com/?q=Nilüfer+Bursa" target="_blank" rel="noopener">
+          <span>Haritada görüntüle</span>
           <p>Nilüfer / Bursa merkezli dernek iletişim noktası.</p>
-        </div>
+        </a>
       </article>
-
       <form id="contactForm" class="contact-form">
         <p class="eyebrow">Mesaj paneli</p>
         <h2>Yönetime mesaj gönderin</h2>
         <div class="form-grid">
           <label>Ad soyad<input name="name" required></label>
           <label>E-posta<input name="email" type="email" required></label>
-          <label>Telefon<input name="phone"></label>
+          <label>Telefon<input name="phone" inputmode="tel"></label>
           <label>Konu<select name="subject" required><option>Üyelik</option><option>Yarışmalar</option><option>Etkinlik</option><option>Firma rehberi</option><option>Basın / iş birliği</option><option>Diğer</option></select></label>
           <label class="full">Mesaj<textarea name="message" rows="7" required></textarea></label>
         </div>
@@ -54,8 +57,6 @@
       </form>
     </section>
   </main>
-  <script src="contact.js"></script>
+  <script src="contact.js?v=20260716"></script>
 </body>
 </html>
-
-

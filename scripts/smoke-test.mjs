@@ -27,6 +27,17 @@ try{
   await request('/api/modules',{method:'POST',cookie:adminCookie,body:{key:'showcase',title:'Sponsor ve ilanlar',status:'Pasif'}});
   const siteConfig=await request('/api/public/site-config');
   if(siteConfig.data.settings['site.name']!=='PEYZAJDER TEST'||siteConfig.data.socialLinks.length!==1||siteConfig.data.modules.find(x=>x.key==='showcase')?.status!=='Pasif')throw new Error('Site özelleştirme ayarları ziyaretçi API’sine yansımadı');
+  await request('/api/settings',{method:'POST',cookie:adminCookie,body:{key:'email.webhookToken',title:'Gizli e-posta tokenı',value:'secret-smoke-token',status:'Aktif'}});
+  const secretAudit=await request('/api/public/site-config');if(secretAudit.data.settings['email.webhookToken'])throw new Error('Gizli iletişim servis tokenı public API’ye sızdı');
+  const newsletterEmail=`newsletter-${Date.now()}@example.test`;
+  await request('/api/public/newsletter',{method:'POST',body:{name:'Bülten Deneme',email:newsletterEmail}});
+  const subscribers=await request('/api/subscribers',{cookie:adminCookie});if(!subscribers.data.some(x=>x.email===newsletterEmail&&x.status==='Aktif'))throw new Error('E-bülten aboneliği yönetim listesine düşmedi');
+  const survey=await request('/api/surveys',{method:'POST',cookie:adminCookie,body:{title:'Smoke anketi',question:'Peyzaj önemli mi?',options:['Evet','Kesinlikle'],status:'Aktif'}});
+  const publicSurvey=await request('/api/public/survey');if(!publicSurvey.data.active||publicSurvey.data.id!==survey.data.id)throw new Error('Aktif anket ana sayfa API’sine yansımadı');
+  await request('/api/public/survey/vote',{method:'POST',body:{surveyId:survey.data.id,option:'0'}});
+  const surveys=await request('/api/surveys',{cookie:adminCookie});if(Number(surveys.data.find(x=>x.id===survey.data.id)?.votes?.[0])!==1)throw new Error('Anket oyu sonuçlara işlenmedi');
+  const emailCampaign=await request('/api/emailCampaigns',{method:'POST',cookie:adminCookie,body:{title:'Gönderim ayarı testi',subject:'Test',audience:'E-bülten aboneleri',body:'Test',status:'Hazır'}});
+  const unconfiguredSend=await requestFailure('/api/communications/email/send',{method:'POST',cookie:adminCookie,body:{campaignId:emailCampaign.data.id}});if(!String(unconfiguredSend.message).includes('409'))throw new Error('E-posta servisi ayarsızken gönderim engellenmedi');
   const legacyFixture=['https://www.','peyzajder.org/eski-haber'].join('');
   const created=await request('/api/content',{method:'POST',cookie:adminCookie,body:{title,category:'haberler',summary:'Türkçe içerik',body:'İçerik metni',sourceUrl:legacyFixture,status:'Yayında'}});
   const item=await request(`/api/content/${created.data.id}`,{cookie:adminCookie});if(item.data.title!==title)throw new Error('Türkçe içerik korunmadı');
@@ -38,6 +49,8 @@ try{
   const applications=await request('/api/applications',{cookie:adminCookie}),application=applications.data.find(x=>x.email===email);if(!application)throw new Error('Üyelik başvurusu admin paneline düşmedi');
   await request(`/api/applications/${application.id}`,{method:'PUT',cookie:adminCookie,body:{status:'Onaylandı'}});
   const approved=await request('/api/member/me',{cookie:memberCookie});if(!approved.data.membershipApproved||approved.data.panelType!=='corporate')throw new Error('Kurumsal onay panel yönlendirmesi hatalı');if(approved.data.finance?.bankAccount?.iban!=='TR740011100000000162599985')throw new Error('Onaylı üyeye dernek banka hesabı gösterilmedi');
+  await request('/api/member/support',{method:'POST',cookie:memberCookie,body:{title:'Panel deneme sorunu',category:'Teknik destek',priority:'Normal',message:'Destek akışı kontrolü'}});
+  const supportTickets=await request('/api/supportTickets',{cookie:adminCookie});if(!supportTickets.data.some(x=>x.email===email&&x.title==='Panel deneme sorunu'))throw new Error('Üye destek talebi yönetime ulaşmadı');
   await request('/api/member/payment-notification',{method:'POST',cookie:memberCookie,body:{paymentType:'Üyelik giriş bedeli',amount:5000,paymentDate:'2026-07-16',name:'dekont.png',data:'data:image/png;base64,iVBORw0KGgo='}});
   const paymentNotices=await request('/api/payments',{cookie:adminCookie});if(!paymentNotices.data.some(x=>x.email===email&&x.status==='Onay bekliyor'&&x.receiptUrl))throw new Error('Üye ödeme bildirimi sayman kayıtlarına düşmedi');
   await request('/api/invitations',{method:'POST',cookie:adminCookie,body:{title:'Kurumsal Üye Buluşması',audience:'Kurumsal',message:'Davet metni',status:'Yayında',date:'2026-09-01'}});

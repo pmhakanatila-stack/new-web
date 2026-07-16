@@ -307,8 +307,9 @@
 .dues-month-card p strong{color:#10251b}
 .dues-month-card>div:last-child{display:flex;align-items:center;justify-content:space-between;gap:10px}
 .dues-month-card button{padding:9px 11px;font-size:12px}
+.contact-admin-card{background:#fff;border:1px solid #d9dfd6;padding:24px;margin-bottom:18px;display:grid;grid-template-columns:minmax(230px,.45fr) 1fr auto;gap:22px;align-items:start}.contact-admin-card h3{margin:0 0 8px;font-size:22px}.contact-admin-card p{margin:0;color:#66736b;line-height:1.55}.contact-admin-card .field-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.contact-admin-card label{font-weight:800;color:#143a26}.contact-admin-card input,.contact-admin-card textarea{display:block;width:100%;margin-top:7px;border:1px solid #cbd5ca;background:#f8faf7;padding:11px;font:inherit}.contact-admin-card input{height:46px}.contact-admin-card textarea{resize:vertical}.contact-admin-card .primary{border:0;background:#123d26;color:#fff;padding:14px 16px;font-weight:900;cursor:pointer}
 @media(max-width:1100px){.dues-hero,.dues-grid{grid-template-columns:1fr}.dues-toolbar{align-items:stretch;flex-direction:column}.dues-toolbar>div{min-width:0;width:100%}}
-@media(max-width:640px){.dues-hero,.dues-card{padding:18px}.dues-stats{grid-template-columns:1fr}.dues-toolbar>div{flex-direction:column}.dues-card .field-grid{grid-template-columns:1fr}.entry-fee-list label{grid-template-columns:1fr}}
+@media(max-width:1100px){.contact-admin-card{grid-template-columns:1fr}.contact-admin-card .field-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:640px){.dues-hero,.dues-card{padding:18px}.dues-stats{grid-template-columns:1fr}.dues-toolbar>div{flex-direction:column}.dues-card .field-grid,.contact-admin-card .field-grid{grid-template-columns:1fr}.entry-fee-list label{grid-template-columns:1fr}}
 
 .module-console{display:grid;gap:22px}
 .module-console-hero{display:grid;grid-template-columns:minmax(360px,1.25fr) minmax(360px,.75fr);gap:20px;align-items:stretch;background:#fff;border:1px solid var(--line);padding:26px;box-shadow:0 18px 42px rgba(20,44,29,.06);position:relative;overflow:hidden}

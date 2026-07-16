@@ -1,6 +1,7 @@
 (function(){
   const apiPath=path=>window.peyzajderApiPath?window.peyzajderApiPath(path):path;
   const clean=value=>String(value||'').trim();
+  const escapeHtml=value=>clean(value).replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
   const norm=value=>clean(value).toLocaleLowerCase('tr-TR');
   const safeUrl=value=>{try{const url=new URL(clean(value),location.href);return ['http:','https:'].includes(url.protocol)?url.href:''}catch{return''}};
   const icons={
@@ -23,10 +24,12 @@
     const logo=clean(settings['site.logo']);if(logo){document.querySelectorAll('.brand-mark,.logo i,.portal-brand i,.brand i').forEach(el=>el.style.setProperty('background',`transparent url("${logo}") center/contain no-repeat`,'important'));document.querySelectorAll('.detail-brand img').forEach(img=>img.src=logo)}
     const favicon=clean(settings['site.favicon']);if(favicon){let link=document.querySelector('link[rel~="icon"]');if(!link){link=document.createElement('link');link.rel='icon';document.head.append(link)}link.href=favicon}
     const hero=clean(settings['home.hero.image']);if(hero){const img=document.querySelector('.hero-media img');if(img)img.src=hero}
-    const phone=clean(settings['contact.phone']),email=clean(settings['contact.email']),address=clean(settings['contact.address']);
+    const phone=clean(settings['contact.phone']),email=clean(settings['contact.email']),address=clean(settings['contact.address']),contactOrganization=clean(settings['contact.organization']),hours=clean(settings['contact.hours']),mapUrl=safeUrl(settings['contact.mapUrl']);
     document.querySelectorAll('a[href^="tel:"]').forEach(a=>{if(phone){a.href=`tel:${phone.replace(/[^+\d]/g,'')}`;a.textContent=phone}});
     document.querySelectorAll('a[href^="mailto:"]').forEach(a=>{if(email){a.href=`mailto:${email}`;a.textContent=email}});
-    document.querySelectorAll('.contact-info .info-list p').forEach(row=>{const label=norm(row.querySelector('b')?.textContent);if(label==='adres'&&address){const target=row.querySelector('span');if(target)target.textContent=address}if(label==='telefon'&&phone){const target=row.querySelector('a');if(target){target.href=`tel:${phone.replace(/[^+\d]/g,'')}`;target.textContent=phone}}if(label==='e-posta'&&email){const target=row.querySelector('a');if(target){target.href=`mailto:${email}`;target.textContent=email}}});
+    const organizationNode=document.querySelector('#contactOrganization');if(organizationNode&&contactOrganization)organizationNode.textContent=contactOrganization;
+    document.querySelectorAll('.contact-info .info-list p').forEach(row=>{const label=norm(row.querySelector('b')?.textContent);if(label==='adres'&&address){const target=row.querySelector('span');if(target)target.textContent=address}if(label==='telefon'&&phone){const target=row.querySelector('a');if(target){target.href=`tel:${phone.replace(/[^+\d]/g,'')}`;target.textContent=phone}}if(label==='e-posta'&&email){const target=row.querySelector('a');if(target){target.href=`mailto:${email}`;target.textContent=email}}if(label==='çalışma saatleri'&&hours){const target=row.querySelector('span');if(target)target.textContent=hours}});
+    const map=document.querySelector('#contactMap');if(map&&mapUrl)map.href=mapUrl;
   }
   function applySocial(links){
     if(!links?.length)return;const html=`<div class="site-social-links" aria-label="Sosyal medya">${links.map(item=>{const url=safeUrl(item.url);return url?`<a href="${url}" target="_blank" rel="noopener" aria-label="${clean(item.title)||'Sosyal medya'}">${icon(item)}<span>${clean(item.title)}</span></a>`:''}).join('')}</div>`;
@@ -42,6 +45,16 @@
     document.body.insertAdjacentHTML('beforeend',`<div class="site-popup" role="dialog" aria-modal="true" aria-labelledby="sitePopupTitle"><div><button type="button" aria-label="Duyuruyu kapat">×</button><p>PEYZAJDER DUYURUSU</p><h2 id="sitePopupTitle"></h2><article></article><a href="contact.html">Bilgi alın →</a></div></div>`);
     const root=document.querySelector('.site-popup');root.querySelector('h2').textContent=clean(popup.title)||'Duyuru';root.querySelector('article').textContent=clean(popup.body);const close=()=>{sessionStorage.setItem(storageKey,'1');root.remove()};root.querySelector('button').onclick=close;root.onclick=e=>{if(e.target===root)close()};
   }
-  async function load(){try{const response=await fetch(apiPath('/api/public/site-config'),{cache:'no-store'});if(!response.ok)return;const data=await response.json();applySettings(data.settings||{});applySocial(data.socialLinks||[]);applyModules(data.modules||[]);applyPopup(data.popup)}catch{}}
+  function bindNewsletter(){
+    const form=document.querySelector('#newsletterForm'),message=document.querySelector('#newsletterMessage');if(!form||form.dataset.bound)return;form.dataset.bound='1';
+    form.addEventListener('submit',async event=>{event.preventDefault();message.textContent='Kaydediliyor…';try{const response=await fetch(apiPath('/api/public/newsletter'),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(Object.fromEntries(new FormData(form)))}),data=await response.json();if(!response.ok)throw new Error(data.error||'Abonelik oluşturulamadı');form.reset();message.textContent=data.message||'E-bülten aboneliğiniz oluşturuldu.'}catch(error){message.textContent=error.message}});
+  }
+  function applySurvey(survey){
+    if(!survey?.active||!document.querySelector('.hero')||document.querySelector('.site-popup'))return;const storageKey=`peyzajder-survey-closed-${survey.id}`;if(sessionStorage.getItem(storageKey))return;
+    document.body.insertAdjacentHTML('beforeend',`<div class="site-survey-popup" role="dialog" aria-modal="true" aria-labelledby="surveyTitle"><form><button class="survey-close" type="button" aria-label="Anketi kapat">×</button><p>PEYZAJDER ANKETİ</p><h2 id="surveyTitle"></h2><h3></h3><div class="survey-options"></div><button class="survey-submit" type="submit">Oyumu gönder →</button><small class="survey-message"></small></form></div>`);
+    const root=document.querySelector('.site-survey-popup'),form=root.querySelector('form'),message=root.querySelector('.survey-message');root.querySelector('h2').textContent=clean(survey.title)||'Görüşünüz bizim için değerli';root.querySelector('h3').textContent=clean(survey.question);root.querySelector('.survey-options').innerHTML=(survey.options||[]).map(option=>`<label><input type="radio" name="option" value="${escapeHtml(option.id)}" required><span>${escapeHtml(option.label)}</span></label>`).join('');
+    const close=()=>{sessionStorage.setItem(storageKey,'1');root.remove()};root.querySelector('.survey-close').onclick=close;form.onsubmit=async event=>{event.preventDefault();const option=new FormData(form).get('option');message.textContent='Oyunuz kaydediliyor…';try{const response=await fetch(apiPath('/api/public/survey/vote'),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({surveyId:survey.id,option})}),data=await response.json();if(!response.ok)throw new Error(data.error||'Oy kaydedilemedi');form.querySelector('.survey-options').innerHTML='<b>Teşekkür ederiz. Oyunuz kaydedildi.</b>';form.querySelector('.survey-submit').remove();message.textContent='';setTimeout(close,2200)}catch(error){message.textContent=error.message}};
+  }
+  async function load(){bindNewsletter();try{const [configResponse,surveyResponse]=await Promise.all([fetch(apiPath('/api/public/site-config'),{cache:'no-store'}),fetch(apiPath('/api/public/survey'),{cache:'no-store'})]);if(configResponse.ok){const data=await configResponse.json();applySettings(data.settings||{});applySocial(data.socialLinks||[]);applyModules(data.modules||[]);applyPopup(data.popup)}if(surveyResponse.ok)applySurvey(await surveyResponse.json())}catch{}}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',load);else load();
 })();

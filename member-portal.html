@@ -21,6 +21,7 @@
       <a href="#companyJobs" data-corporate-only hidden>İlan taleplerim</a>
       <a href="#invitations" data-approved-only hidden>Davetiyelerim</a>
       <a href="#managementMessages" data-approved-only hidden>Yönetimle mesajlaşma</a>
+      <a href="#support" data-approved-only hidden>Destek taleplerim</a>
       <a href="archive.html">İçerik merkezi</a>
       <a href="index.html#rehber" data-member-only hidden>Firma rehberi</a>
     </nav>
@@ -119,6 +120,20 @@
           <label class="wide">Mesajınız<textarea name="message" required></textarea></label>
           <button class="portal-button">Yönetime gönder →</button>
           <p id="memberMessageStatus"></p>
+        </form>
+      </div>
+    </section>
+    <section id="support" class="profile-card" data-approved-only hidden>
+      <div><span class="number">08</span><h3>Destek taleplerim</h3><p>Hesap, belge yükleme, üyelik işlemi veya panel kullanımıyla ilgili teknik bir sorun yaşarsanız buradan kayıt açabilirsiniz. Genel dernek iletişimi için Yönetimle mesajlaşma alanını kullanın.</p></div>
+      <div>
+        <div id="supportList" class="job-list"><p class="hint">Henüz destek talebi yok.</p></div>
+        <form id="supportForm" class="profile-form">
+          <label>Kategori<select name="category"><option>Teknik destek</option><option>Hesap ve giriş</option><option>Belge yükleme</option><option>Üyelik işlemi</option><option>Diğer</option></select></label>
+          <label>Öncelik<select name="priority"><option>Normal</option><option>Düşük</option><option>Yüksek</option></select></label>
+          <label class="wide">Konu<input name="title" required></label>
+          <label class="wide">Sorunun açıklaması<textarea name="message" required></textarea></label>
+          <button class="portal-button">Destek talebi oluştur →</button>
+          <p id="supportMessage"></p>
         </form>
       </div>
     </section>

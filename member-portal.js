@@ -181,6 +181,15 @@ function renderMemberMessages(items=[]){
   box.innerHTML=items.length?items.map(x=>`<div class="job-row"><b>${x.direction||'Mesaj'}</b><span>${x.message||''}</span><em>${new Date(x.createdAt||Date.now()).toLocaleString('tr-TR')}</em></div>`).join(''):'<p class="hint">Henüz mesaj yok.</p>';
 }
 
+function renderSupportTickets(items=[]){
+  const box=document.querySelector('#supportList');if(!box)return;
+  box.innerHTML=items.length?items.map(item=>`<div class="job-row"><b>${item.title||'Destek talebi'}</b><span>${item.message||''}</span>${item.reply?`<p><strong>Yönetim yanıtı:</strong> ${item.reply}</p>`:''}<em>${item.status||'Açık'} · ${new Date(item.createdAt||Date.now()).toLocaleString('tr-TR')}</em></div>`).join(''):'<p class="hint">Henüz destek talebi yok.</p>';
+}
+
+async function loadSupportTickets(){
+  try{const response=await fetch(apiPath('/api/member/support'),{credentials:'same-origin'});if(response.ok)renderSupportTickets(await response.json())}catch{}
+}
+
 async function loadJobs(){
   try{const r=await fetch(apiPath('/api/member/jobs'),{credentials:'same-origin'});if(r.ok)renderJobs(await r.json())}catch{}
 }
@@ -201,6 +210,7 @@ async function load(){
   setPortalMode(d);
   renderInvitations(d.invitations||[]);
   renderMemberMessages(d.messages||[]);
+  if(d.membershipApproved)loadSupportTickets();
   const hasApplication=Boolean(d.application);
   document.querySelector('#applicationUploadCard').hidden=hasApplication;
   document.querySelector('#application').classList.toggle('has-application',hasApplication);
@@ -273,6 +283,11 @@ document.querySelector('#jobForm').addEventListener('submit',async e=>{
 document.querySelector('#memberMessageForm').addEventListener('submit',async e=>{
   e.preventDefault();const status=document.querySelector('#memberMessageStatus');status.textContent='Mesaj gönderiliyor…';
   try{const data=Object.fromEntries(new FormData(e.target));const r=await fetch(apiPath('/api/member/messages'),{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify(data)});const d=await r.json();if(!r.ok)throw new Error(d.error||'Mesaj gönderilemedi');e.target.reset();status.textContent='Mesajınız yönetime iletildi.';await load()}catch(x){status.textContent=x.message}
+});
+
+document.querySelector('#supportForm')?.addEventListener('submit',async event=>{
+  event.preventDefault();const output=document.querySelector('#supportMessage');output.textContent='Destek talebiniz kaydediliyor…';
+  try{const response=await fetch(apiPath('/api/member/support'),{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify(Object.fromEntries(new FormData(event.target)))}),data=await response.json();if(!response.ok)throw new Error(data.error||'Destek talebi oluşturulamadı');event.target.reset();output.textContent='Destek talebiniz yönetime iletildi.';loadSupportTickets()}catch(error){output.textContent=error.message}
 });
 
 document.querySelector('#logout').onclick=async()=>{await fetch(apiPath('/api/member/logout'),{credentials:'same-origin'});location.href='member-login.html'};
