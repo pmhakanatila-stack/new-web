@@ -10,7 +10,7 @@ const COOKIE_PATH=BASE_PATH||'/';
 const PORT=Number(process.env.PORT||4173), HOST=process.env.PEYZAJDER_HOST||'0.0.0.0', USER=process.env.PEYZAJDER_ADMIN_USER||'admin', PASSWORD=process.env.PEYZAJDER_ADMIN_PASSWORD||'Peyzajder!2026';
 const sessions=new Map(),resetTokens=new Map();
 const types={'.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.js':'text/javascript; charset=utf-8','.json':'application/json; charset=utf-8','.png':'image/png','.jpg':'image/jpeg','.jpeg':'image/jpeg','.webp':'image/webp','.svg':'image/svg+xml'};
-const collections=['content','events','boards','members','firms','accounts','memberGroups','applications','dues','duePeriods','payments','businessLedger','decisions','subscribers','emailCampaigns','smsCampaigns','notifications','invitations','memberMessages','notificationReads','surveys','galleries','videos','articles','authors','publications','webinars','menus','sliders','popups','promoPanels','socialLinks','sponsors','sponsorCategories','jobPosts','bankAccounts','contactMessages','supportTickets','settings','users','modules'];
+const collections=['content','events','boards','members','firms','accounts','memberGroups','applications','dues','duePeriods','payments','businessLedger','decisions','subscribers','emailCampaigns','smsCampaigns','notifications','invitations','memberMessages','notificationReads','surveys','galleries','videos','articles','authors','publications','webinars','menus','sliders','promoPanels','socialLinks','sponsors','sponsorCategories','jobPosts','bankAccounts','contactMessages','supportTickets','settings','users','modules'];
 await mkdir(dataDir,{recursive:true});await mkdir(uploadDir,{recursive:true});
 
 const isLegacyPeyzajderSource=value=>/^https?:\/\/(?:www\.)?peyzajder\.org(?:[/?#]|$)/i.test(String(value||'').trim());
@@ -223,10 +223,8 @@ async function api(req,res,url){
     const publicSetting=key=>!/(token|password|secret|webhook|api.?key|smtp)/i.test(String(key||''));
     const settings=Object.fromEntries((db.settings||[]).filter(visible).map(x=>[String(x.key||x.title||''),String(x.value||'')]).filter(([key,value])=>key&&value&&publicSetting(key)));
     const socialLinks=(db.socialLinks||[]).filter(x=>visible(x)&&String(x.url||'').trim()).map(({id,title,platform,url,status})=>({id,title,platform,url,status:'Aktif'}));
-    const now=new Date(),day=now.toISOString().slice(0,10);
-    const popup=(db.popups||[]).filter(visible).filter(x=>(!x.startDate||x.startDate<=day)&&(!x.endDate||x.endDate>=day)).sort((a,b)=>new Date(b.updatedAt||b.createdAt||0)-new Date(a.updatedAt||a.createdAt||0))[0]||null;
     const modules=(db.modules||[]).map(({key,title,status})=>({key,title,status:status||'Aktif'}));
-    return json(res,200,{settings,socialLinks,popup:popup?{id:popup.id,title:popup.title||'',body:popup.body||popup.description||'',startDate:popup.startDate||'',endDate:popup.endDate||''}:null,modules});
+    return json(res,200,{settings,socialLinks,modules});
   }
   if(url.pathname==='/api/public/home'&&req.method==='GET'){
     const cleanText=v=>String(v||'').replace(/var\s+approachingEvent;/gi,'').replace(/var\s+content_slider;/gi,'').replace(/google-site-verification=[^\s]+/gi,'').replace(/Çağrı Merkezi\s*\d[\d\s]+/gi,'').replace(/YÖNETİM Başkanın Mesajları/gi,'').replace(/DERNEK ve ÜYELER Hakkımızda Banka Hesap Numaralarımız/gi,'').replace(/DERNEK[\s\S]{0,120}Banka Hesap Numaralar[ıi]*m[ıi]*z/gi,'').replace(/Adres\s*:\s*Alaaddinbey Mah\.[\s\S]*Bursa/gi,'').replace(/E-Posta\s*:\s*bilgi@peyzajder\.org/gi,'').replace(/Güncel haberler, duyurular ve ihalelerden anında haberdar ol/gi,'').replace(/Bu internet sitesinde sizlere daha iyi hizmet sunulabilmesi için çerezler kullanılmaktadır\./gi,'').replace(/\s+/g,' ').trim();
