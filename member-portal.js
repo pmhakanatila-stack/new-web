@@ -176,6 +176,11 @@ function renderInvitations(items=[]){
   box.innerHTML=items.length?items.map(x=>`<article class="job-row"><div><small>${x.date?new Date(x.date).toLocaleDateString('tr-TR'):'DAVETİYE'}</small><b>${x.title||'PEYZAJDER etkinliği'}</b><p>${x.message||x.description||''}</p>${x.location?`<a href="${x.location}" target="_blank" rel="noopener">Yer / bağlantı →</a>`:''}</div></article>`).join(''):'<p class="hint">Üyelik türünüze gönderilmiş güncel davetiye bulunmuyor.</p>';
 }
 
+function renderNotifications(items=[]){
+  const box=document.querySelector('#notificationList');if(!box)return;
+  box.innerHTML=items.length?items.map(item=>`<article class="job-row"><div><small>${item.startDate?new Date(item.startDate).toLocaleDateString('tr-TR'):'BİLDİRİM'}</small><b>${item.title||'PEYZAJDER bildirimi'}</b><p>${item.message||item.description||''}</p>${item.link||item.url?`<a href="${item.link||item.url}" target="_blank" rel="noopener">Detayı aç →</a>`:''}</div></article>`).join(''):'<p class="hint">Güncel bildiriminiz bulunmuyor.</p>';
+}
+
 function renderMemberMessages(items=[]){
   const box=document.querySelector('#memberMessageList');if(!box)return;
   box.innerHTML=items.length?items.map(x=>`<div class="job-row"><b>${x.direction||'Mesaj'}</b><span>${x.message||''}</span><em>${new Date(x.createdAt||Date.now()).toLocaleString('tr-TR')}</em></div>`).join(''):'<p class="hint">Henüz mesaj yok.</p>';
@@ -208,6 +213,7 @@ async function load(){
   renderPaymentInfo(d.finance||{},d);
   const showCorporatePanel=d.panelType==='corporate';
   setPortalMode(d);
+  renderNotifications(d.notifications||[]);
   renderInvitations(d.invitations||[]);
   renderMemberMessages(d.messages||[]);
   if(d.membershipApproved)loadSupportTickets();

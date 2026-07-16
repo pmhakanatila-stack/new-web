@@ -84,7 +84,7 @@ const memberSession=req=>sessions.get(cookies(req).peyzajder_member_session)||((
 const secureEqual=(a,b)=>{const ah=scryptSync(a,'peyzajder-local',32),bh=scryptSync(b,'peyzajder-local',32);return timingSafeEqual(ah,bh)};
 let auditUser=USER;
 const audit=(action,collection,item,user=auditUser)=>db.activity.unshift({id:randomBytes(6).toString('hex'),action,collection,item:item?.title||item?.name||item?.email||'',at:new Date().toISOString(),user});
-const roleAccess={admin:new Set(collections),sayman:new Set(['dues','duePeriods','payments','businessLedger','bankAccounts','members','memberGroups','settings']),moderator:new Set(['content','events','publications','webinars','galleries','videos','articles','authors','sliders','jobPosts','firms','users','applications','members','invitations','memberMessages','supportTickets','surveys']),author:new Set([])};
+const roleAccess={admin:new Set(collections),sayman:new Set(['dues','duePeriods','payments','businessLedger','bankAccounts','members','memberGroups','settings']),moderator:new Set(['content','events','publications','webinars','galleries','videos','articles','authors','sliders','jobPosts','firms','users','applications','members','invitations','memberMessages','notifications','supportTickets','surveys']),author:new Set([])};
 const normalizedRole=r=>{const x=String(r||'').toLocaleLowerCase('tr');if(x.includes('muhasebe')||x.includes('sayman'))return'sayman';if(x.includes('köşe')||x.includes('köşe')||x.includes('kose')||x.includes('yazar'))return'author';if(x.includes('editör')||x.includes('editör')||x.includes('editor')||x.includes('moderatör')||x.includes('moderatör')||x.includes('moderator'))return'moderator';return'admin'};
 const roleLabel=r=>({admin:'Yönetici',moderator:'Moderatör',sayman:'Sayman',author:'Köşe Yazarı'}[r]||'Yönetici');
 const tempPassword=()=>`Pyz-${randomBytes(3).toString('hex')}-${randomBytes(3).toString('hex')}!`;
@@ -138,7 +138,7 @@ const membershipApproved=(account,application,member=memberRecordFor(account))=>
 const itemTime=item=>new Date(item.createdAt||item.date||item.updatedAt||0).getTime()||0;
 function notificationSummary(req){
   const memberAuth=memberSession(req),staffAuth=adminSession(req);
-  let key='',labels=[],messages=[],invitations=[];
+  let key='',labels=[],messages=[],invitations=[],notifications=[];
   if(memberAuth){
     const account=db.accounts.find(x=>x.id===memberAuth.accountId);if(!account)return null;
     const application=db.applications.find(x=>x.accountId===account.id)||null,member=memberRecordFor(account),membershipType=account.membershipType||account.group||application?.membershipType||member?.membershipType||'';
@@ -151,9 +151,11 @@ function notificationSummary(req){
     else messages=(db.memberMessages||[]).filter(x=>normText(x.recipient||x.to)===normText(email));
   }else return null;
   invitations=(db.invitations||[]).filter(x=>!['pasif','taslak'].includes(normText(x.status||'Yayında'))).filter(x=>String(x.audience||x.target||'Tümü').split(',').map(normText).some(target=>labels.includes(target)));
+  const today=new Date().toISOString().slice(0,10);
+  notifications=(db.notifications||[]).filter(x=>!['pasif','taslak'].includes(normText(x.status||'Aktif'))).filter(x=>(!x.startDate||x.startDate<=today)&&(!x.endDate||x.endDate>=today)).filter(x=>String(x.audience||x.target||'Tümü').split(',').map(normText).some(target=>labels.includes(target)));
   const read=(db.notificationReads||[]).find(x=>x.key===key),seenAt=new Date(read?.seenAt||0).getTime()||0;
-  const unreadMessages=messages.filter(x=>itemTime(x)>seenAt).length,unreadInvitations=invitations.filter(x=>itemTime(x)>seenAt).length;
-  return{key,unreadMessages,unreadInvitations,total:unreadMessages+unreadInvitations};
+  const unreadMessages=messages.filter(x=>itemTime(x)>seenAt).length,unreadInvitations=invitations.filter(x=>itemTime(x)>seenAt).length,unreadNotificationItems=notifications.filter(x=>itemTime(x)>seenAt);
+  return{key,unreadMessages,unreadInvitations,unreadNotifications:unreadNotificationItems.length,notifications:unreadNotificationItems.map(x=>({id:x.id,title:x.title||'Bildirim',message:x.message||x.description||'',link:x.link||x.url||''})),total:unreadMessages+unreadInvitations+unreadNotificationItems.length};
 }
 function syncApplicationApproval(application){
   if(!application?.accountId)return;
@@ -318,7 +320,7 @@ async function api(req,res,url){
   if(url.pathname==='/api/public/contact'&&req.method==='POST'){const b=await body(req),name=String(b.name||'').trim(),email=String(b.email||'').trim(),message=String(b.message||'').trim();if(!name||!email.includes('@')||!message)return json(res,400,{error:'Ad soyad, geçerli e-posta ve mesaj alanı gerekli'});const item={id:`contactMessages-${Date.now()}-${randomBytes(3).toString('hex')}`,name,email,phone:String(b.phone||'').trim(),subject:String(b.subject||'İletişim'),message,status:'Yeni',createdAt:new Date().toISOString(),updatedAt:new Date().toISOString(),source:'İletişim sayfası'};db.contactMessages.unshift(item);audit('Yeni mesaj','contactMessages',item);await save(db);return json(res,201,{ok:true})}
   if(url.pathname==='/api/panel-notifications'){
     const summary=notificationSummary(req);if(!summary)return json(res,401,{error:'Oturum gerekli'});
-    if(req.method==='GET')return json(res,200,{unreadMessages:summary.unreadMessages,unreadInvitations:summary.unreadInvitations,total:summary.total});
+    if(req.method==='GET')return json(res,200,{unreadMessages:summary.unreadMessages,unreadInvitations:summary.unreadInvitations,unreadNotifications:summary.unreadNotifications,notifications:summary.notifications,total:summary.total});
     if(req.method==='POST'){
       let read=(db.notificationReads||[]).find(x=>x.key===summary.key);
       if(!read){read={id:`notificationReads-${Date.now()}-${randomBytes(3).toString('hex')}`,key:summary.key,createdAt:new Date().toISOString()};db.notificationReads.push(read)}
@@ -361,8 +363,9 @@ async function api(req,res,url){
     const membershipType=a.membershipType||a.group||application?.membershipType||'';
     const audienceMatches=x=>{const targets=String(x.audience||x.target||'Tümü').split(',').map(normText);return targets.some(t=>t==='tümü'||t==='tum üyeler'||t==='tüm üyeler'||t===normText(membershipType)||(corporate&&t==='kurumsal')||(!corporate&&(t==='bireysel & öğrenci'||t==='bireysel/öğrenci')))};
     const invitations=approved?(db.invitations||[]).filter(x=>!['Pasif','Taslak'].includes(String(x.status||'Yayında'))&&audienceMatches(x)).sort((x,y)=>new Date(y.date||y.createdAt||0)-new Date(x.date||x.createdAt||0)):[];
+    const today=new Date().toISOString().slice(0,10),notifications=approved?(db.notifications||[]).filter(x=>!['Pasif','Taslak'].includes(String(x.status||'Aktif'))&&(!x.startDate||x.startDate<=today)&&(!x.endDate||x.endDate>=today)&&audienceMatches(x)).sort((x,y)=>new Date(y.createdAt||0)-new Date(x.createdAt||0)):[];
     const messages=approved?(db.memberMessages||[]).filter(x=>x.accountId===a.id||String(x.email||'').toLowerCase()===a.email).sort((x,y)=>new Date(x.createdAt||0)-new Date(y.createdAt||0)):[];
-    return json(res,200,{id:a.id,name:a.name,email:a.email,phone:a.phone,city:a.city,profession:a.profession,role:a.role,membershipType,membershipStatus:a.membershipStatus,membershipApproved:approved,panelType:approved?(corporate?'corporate':'member'):'application',isCorporate:corporate,finance:memberFinance(a,approved),application,company,invitations,messages});
+    return json(res,200,{id:a.id,name:a.name,email:a.email,phone:a.phone,city:a.city,profession:a.profession,role:a.role,membershipType,membershipStatus:a.membershipStatus,membershipApproved:approved,panelType:approved?(corporate?'corporate':'member'):'application',isCorporate:corporate,finance:memberFinance(a,approved),application,company,invitations,messages,notifications});
   }
   if(url.pathname==='/api/member/payment-notification'&&req.method==='POST'){
     const s=memberSession(req);if(!s)return json(res,401,{error:'Üye girişi gerekli'});

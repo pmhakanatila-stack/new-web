@@ -49,6 +49,11 @@ try{
   const applications=await request('/api/applications',{cookie:adminCookie}),application=applications.data.find(x=>x.email===email);if(!application)throw new Error('Üyelik başvurusu admin paneline düşmedi');
   await request(`/api/applications/${application.id}`,{method:'PUT',cookie:adminCookie,body:{status:'Onaylandı'}});
   const approved=await request('/api/member/me',{cookie:memberCookie});if(!approved.data.membershipApproved||approved.data.panelType!=='corporate')throw new Error('Kurumsal onay panel yönlendirmesi hatalı');if(approved.data.finance?.bankAccount?.iban!=='TR740011100000000162599985')throw new Error('Onaylı üyeye dernek banka hesabı gösterilmedi');
+  const notification=await request('/api/notifications',{method:'POST',cookie:adminCookie,body:{title:'Kurumsal üye bildirimi',audience:'Kurumsal',message:'Panel bildirimi denemesi',status:'Aktif'}});
+  const notifiedMember=await request('/api/member/me',{cookie:memberCookie});if(!notifiedMember.data.notifications?.some(x=>x.id===notification.data.id))throw new Error('Hedefli bildirim üye paneline ulaşmadı');
+  const notificationBadge=await request('/api/panel-notifications',{cookie:memberCookie});if(notificationBadge.data.unreadNotifications!==1||notificationBadge.data.total<1)throw new Error('Bildirim panel rozetine eklenmedi');
+  await request('/api/panel-notifications',{method:'POST',cookie:memberCookie});
+  const readNotificationBadge=await request('/api/panel-notifications',{cookie:memberCookie});if(readNotificationBadge.data.unreadNotifications!==0)throw new Error('Okunan bildirim rozetten düşmedi');
   await request('/api/member/support',{method:'POST',cookie:memberCookie,body:{title:'Panel deneme sorunu',category:'Teknik destek',priority:'Normal',message:'Destek akışı kontrolü'}});
   const supportTickets=await request('/api/supportTickets',{cookie:adminCookie});if(!supportTickets.data.some(x=>x.email===email&&x.title==='Panel deneme sorunu'))throw new Error('Üye destek talebi yönetime ulaşmadı');
   await request('/api/member/payment-notification',{method:'POST',cookie:memberCookie,body:{paymentType:'Üyelik giriş bedeli',amount:5000,paymentDate:'2026-07-16',name:'dekont.png',data:'data:image/png;base64,iVBORw0KGgo='}});
