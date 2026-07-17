@@ -30,6 +30,29 @@ function normalizeDb(value={}){
   if(!Array.isArray(result.activity))result.activity=[];
   return result;
 }
+function canonicalizeEvents(value){
+  const legacy=(value.content||[]).filter(item=>item.category==='etkinlikler');
+  if(!legacy.length)return 0;
+  const byId=new Map((value.events||[]).map(item=>[String(item.id||''),item]));
+  const byTitle=new Map((value.events||[]).map(item=>[String(item.title||'').trim().toLocaleLowerCase('tr-TR'),item]));
+  let changed=0;
+  for(const source of legacy){
+    const expectedId=String(source.id||'').startsWith('event-')?String(source.id):`event-${source.id}`;
+    let target=byId.get(expectedId)||byTitle.get(String(source.title||'').trim().toLocaleLowerCase('tr-TR'));
+    if(!target){
+      target={...source,id:expectedId,category:'etkinlikler'};
+      value.events.push(target);byId.set(expectedId,target);changed++;
+      continue;
+    }
+    for(const key of ['title','summary','seoDescription','body','description','image','date','location','status','sourceUrl','createdAt']){
+      if((target[key]===undefined||target[key]===null||target[key]==='')&&source[key]){target[key]=source[key];changed++}
+    }
+    if((!Array.isArray(target.images)||!target.images.length)&&Array.isArray(source.images)&&source.images.length){target.images=[...source.images];changed++}
+    target.category='etkinlikler';
+  }
+  value.content=value.content.filter(item=>item.category!=='etkinlikler');
+  return changed+legacy.length;
+}
 async function readJson(path){return JSON.parse((await readFile(path,'utf8')).replace(/^\uFEFF/,''))}
 async function initialDb(){
   try{return normalizeDb(await readJson(dbFile))}catch{}
@@ -74,6 +97,8 @@ if(!(db.settings||[]).some(x=>x.key===defaultBankSeedKey)){
   await save(db);
 }
 if(!db.content.length){try{const source=JSON.parse((await readFile(join(root,'content-data.json'),'utf8')).replace(/^\uFEFF/,''));db.content=source.pages.filter(x=>x.title&&!x.error).map((x,i)=>({id:`content-${i+1}`,title:x.title,category:x.category,status:'Yayında',summary:x.paragraphs?.[0]||'',body:(x.paragraphs||[]).join('\n\n'),image:x.images?.[0]?.src||'',createdAt:new Date().toISOString()}));db.events=db.content.filter(x=>x.category==='etkinlikler').map(x=>({...x,id:`event-${x.id}`}));await save(db)}catch{}}
+const canonicalizedEventCount=canonicalizeEvents(db);
+if(canonicalizedEventCount)await save(db);
 const json=(res,status,data,headers={})=>{res.writeHead(status,{'Content-Type':'application/json; charset=utf-8',...headers});res.end(JSON.stringify(data))};
 const withBase=p=>`${BASE_PATH}${p.startsWith('/')?p:`/${p}`}`;
 const body=async req=>{const parts=[];for await(const c of req)parts.push(c);if(!parts.length)return{};const data=JSON.parse(Buffer.concat(parts).toString('utf8')),pathname=new URL(req.url||'/',`http://${req.headers.host||'localhost'}`).pathname,collection=pathname.startsWith('/api/author/articles')?'articles':pathname.split('/').filter(Boolean)[1]||'';return sanitizeRichRecord(collection,data)};
@@ -243,7 +268,7 @@ async function api(req,res,url){
     const excludedSliderIds=new Set((db.sliders||[]).filter(x=>String(x.status||'Pasif')!=='Aktif').map(x=>String(x.sourceId||x.contentId||x.eventId||x.id)));
     const sliderPool=[
       ...content.filter(x=>x.category==='haberler').map(x=>({...publicItem(x),type:'Haber'})),
-      ...[...(db.events||[]),...content.filter(x=>x.category==='etkinlikler')].filter(visible).map(x=>({...publicItem(x),type:'Etkinlik'}))
+      ...(db.events||[]).filter(visible).map(x=>({...publicItem(x),type:'Etkinlik'}))
     ].filter(x=>x.title&&!excludedSliderIds.has(String(x.id))).sort(byDate);
     const sliderItems=sliderPool.slice(0,5);
     const publicSetting=key=>!/(token|password|secret|webhook|api.?key|smtp)/i.test(String(key||''));
@@ -252,7 +277,7 @@ async function api(req,res,url){
       settings,
       sliders:sliderItems,
       haberler:content.filter(x=>x.category==='haberler').sort(byDate).slice(0,4).map(publicItem),
-      etkinlikler:[...(db.events||[]),...content.filter(x=>x.category==='etkinlikler')].filter(visible).sort(byDate).slice(0,4).map(publicItem),
+      etkinlikler:(db.events||[]).filter(visible).sort(byDate).slice(0,4).map(publicItem),
       duyurular:content.filter(x=>x.category==='duyurular').sort(byDate).slice(0,4).map(publicItem),
       articles:editorial,
       editorial
@@ -280,7 +305,7 @@ async function api(req,res,url){
     const id=String(url.searchParams.get('id')||'');
     const visible=x=>!['Pasif','Taslak','Arşiv','Arsiv'].includes(String(x.status||'Yayında'));
     const sources=[
-      ...(db.content||[]).map(x=>({...x,type:x.category==='duyurular'?'Duyuru':x.category==='etkinlikler'?'Etkinlik':'Haber'})),
+      ...(db.content||[]).filter(x=>x.category!=='etkinlikler').map(x=>({...x,type:x.category==='duyurular'?'Duyuru':'Haber'})),
       ...(db.events||[]).map(x=>({...x,type:'Etkinlik'})),
       ...(db.jobPosts||[]).map(x=>({...x,type:'İlan'})),
       ...(db.articles||[]).map(x=>({...x,type:'Köşe Yazısı'}))

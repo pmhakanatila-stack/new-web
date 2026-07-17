@@ -594,6 +594,7 @@ function openEventEditor(item=null){
     <label class="full">Başlık<input name="title" type="text" value="${escapeHtml(item?.title||'')}" required></label>
     <label>Etkinlik tarihi<input name="date" type="date" value="${escapeHtml(String(item?.date||item?.createdAt||'').slice(0,10))}"></label>
     <label>Konum<input name="location" type="text" value="${escapeHtml(item?.location||'')}"></label>
+    <label class="full">SEO açıklama<textarea name="seoDescription" maxlength="180" placeholder="Arama motorlarında ve paylaşım önizlemesinde görünecek kısa açıklama">${escapeHtml(item?.seoDescription||item?.summary||'')}</textarea></label>
     <label class="full">Kısa özet<textarea name="summary" placeholder="Ana sayfa kartında ve slaytta görünecek kısa metin">${escapeHtml(item?.summary||'')}</textarea></label>
     <label class="full">Etkinlik içeriği<textarea name="body" rows="10" data-rich-editor placeholder="Etkinlik detay metni">${escapeHtml(item?.body||item?.description||'')}</textarea></label>
     <label>Durum<select name="status">${['Yayında','Taslak','Beklemede','Pasif'].map(status=>`<option ${status===(item?.status||'Yayında')?'selected':''}>${status}</option>`).join('')}</select></label>
@@ -674,7 +675,7 @@ async function renderSmartModule(view){
     $('#viewTitle').textContent=modules[view]?.[0]||meta.title;
     $('#addButton').hidden=false;
     $('#addButton').textContent='+ Yeni kayıt';
-    $('#addButton').onclick=()=>openEditor();
+    $('#addButton').onclick=()=>view==='events'?openEventEditor():openEditor();
     state.items=await api(view);
     const items=Array.isArray(state.items)?state.items:[];
     const activeCount=items.filter(x=>['aktif','yay\u0131nda','\u00f6dendi','tamamland\u0131','onayland\u0131'].includes(norm(statusText(x)))).length;
@@ -690,7 +691,7 @@ async function renderSmartModule(view){
         <section class="module-records"><div class="module-records-head"><div><h3>${escapeHtml(modules[view]?.[0]||'Kayıtlar')}</h3><p>${items.length?`${items.length} kayıt listeleniyor`:'Henüz kayıt yok; ilk kaydı ekleyin.'}</p></div><div><input id="smartSearch" placeholder="Bu bölümde ara..."><select id="smartStatus"><option value="">Tüm durumlar</option><option>Aktif</option><option>Yayında</option><option>Beklemede</option><option>Taslak</option><option>Pasif</option><option>Ödendi</option></select></div></div><div class="smart-table-wrap"><table class="smart-table"><thead><tr><th>Kayıt</th><th>Site / kategori</th><th>Durum</th><th>Güncelleme</th><th>İşlem</th></tr></thead><tbody id="smartRows"></tbody></table></div></section>
       </div>
     </section>`;
-    document.querySelector('[data-smart-add]').onclick=()=>openEditor();
+    document.querySelector('[data-smart-add]').onclick=()=>view==='events'?openEventEditor():openEditor();
     document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>openView(b.dataset.go));
     $('#smartSearch').oninput=drawSmartRows;$('#smartStatus').onchange=drawSmartRows;
     drawSmartRows();
@@ -708,7 +709,10 @@ function drawSmartRows(){
   });
   $('#smartRows').innerHTML=rows.length?rows.map(x=>`<tr><td><b>${escapeHtml(smartTitle(x))}</b><small>${escapeHtml(smartDetail(view,x))}</small></td><td><span>${escapeHtml(smartCategory(view,x))}</span></td><td><span class="status">${escapeHtml(statusText(x))}</span></td><td>${new Date(x.updatedAt||x.createdAt||Date.now()).toLocaleDateString('tr-TR')}</td><td><div class="row-actions">${view==='memberMessages'&&x.direction==='Üyeden yönetime'?`<button data-reply="${x.id}">Yanıtla</button>`:''}<button data-edit="${x.id}">Düzenle</button><button data-delete="${x.id}">Sil</button></div></td></tr>`).join(''):`<tr><td colspan="5" class="empty">Bu bölümde henüz kayıt yok. Sağ üstten veya bölüm içindeki “Yeni kayıt ekle” butonundan başlayabilirsiniz.</td></tr>`;
   $('#smartRows').querySelectorAll('[data-reply]').forEach(b=>b.onclick=()=>openMessageReply(state.items.find(x=>x.id===b.dataset.reply)));
-  $('#smartRows').querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>openEditor(state.items.find(x=>x.id===b.dataset.edit)));
+  $('#smartRows').querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>{
+    const item=state.items.find(x=>x.id===b.dataset.edit);
+    return view==='events'?openEventEditor(item):openEditor(item);
+  });
   $('#smartRows').querySelectorAll('[data-delete]').forEach(b=>b.onclick=()=>removeSmartItem(b.dataset.delete));
 }
 
@@ -782,6 +786,7 @@ $('#editorForm').onsubmit=async e=>{
     e.preventDefault();
     const data=Object.fromEntries(new FormData(e.target));
     try{data.images=JSON.parse(data.images||'[]')}catch{data.images=[]}
+    if(!data.summary&&data.seoDescription)data.summary=data.seoDescription;
     data.description=data.body||'';
     try{
       await api(state.edit?`events/${state.edit.id}`:'events',{method:state.edit?'PUT':'POST',body:JSON.stringify({...state.edit,...data})});

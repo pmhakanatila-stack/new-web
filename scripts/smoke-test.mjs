@@ -17,6 +17,13 @@ try{
   const health=await request('/api/health');if(!health.data.ok)throw new Error('Sağlık kontrolü başarısız');
   const home=await request('/api/public/home');if(!Array.isArray(home.data.haberler)||home.data.haberler.length<1)throw new Error('Başlangıç içerikleri yüklenmedi');
   const login=await request('/api/login',{method:'POST',body:{username:'smoke-admin',password:'Smoke!2026'}}),adminCookie=login.cookie;
+  const migratedEvents=await request('/api/events',{cookie:adminCookie});
+  if(!migratedEvents.data.length||!migratedEvents.data.every(x=>x.title&&(x.body||x.description)))throw new Error('Eski etkinlikler dolu etkinlik kayıtlarına taşınmadı');
+  const eventIds=home.data.etkinlikler.map(x=>x.id);if(new Set(eventIds).size!==eventIds.length)throw new Error('Ana sayfada mükerrer etkinlik kaydı var');
+  const editableEvent=migratedEvents.data[0];
+  await request(`/api/events/${editableEvent.id}`,{method:'PUT',cookie:adminCookie,body:{...editableEvent,summary:'Düzenleme bağlantısı testi',body:'<p>Etkinlik düzenleme metni</p>',description:'<p>Etkinlik düzenleme metni</p>',image:'uploads/event-cover.webp',images:['uploads/event-gallery.webp']}});
+  const editedEvent=await request(`/api/events/${editableEvent.id}`,{cookie:adminCookie});if(editedEvent.data.body!=='<p>Etkinlik düzenleme metni</p>'||editedEvent.data.image!=='uploads/event-cover.webp'||editedEvent.data.images?.length!==1)throw new Error('Etkinlik düzenleme içeriği ve fotoğrafları korunmadı');
+  const editedPublicEvent=await request(`/api/public/item?id=${encodeURIComponent(editableEvent.id)}`);if(editedPublicEvent.data.body!=='<p>Etkinlik düzenleme metni</p>'||editedPublicEvent.data.image!=='uploads/event-cover.webp'||editedPublicEvent.data.images?.length!==1)throw new Error('Düzenlenen etkinlik ana siteye bağlanmadı');
   await request('/api/memberGroups',{method:'POST',cookie:adminCookie,body:{title:'Köşe Yazarı',status:'Aktif'}});
   const publicMemberTypes=await request('/api/public/member-types');if(publicMemberTypes.data.some(x=>String(x.title).toLocaleLowerCase('tr-TR').includes('yazar')))throw new Error('Köşe yazarı ziyaretçi üyelik seçeneklerine sızdı');
   const forbiddenRegistration=await requestFailure('/api/register',{method:'POST',body:{name:'Deneme Yazar',email:`writer-${Date.now()}@example.test`,phone:'0532 555 44 33',password:'Deneme!2026',membershipType:'Köşe Yazarı'}});if(!String(forbiddenRegistration.message).includes('400'))throw forbiddenRegistration;
@@ -80,5 +87,5 @@ try{
   const remainingDues=await request('/api/dues',{cookie:adminCookie});if(remainingDues.data.some(x=>x.tariffId===tariff.data.id))throw new Error('Geri alınan aidat kayıtları silinmedi');
   await stop();start(port+1);await ready();
   const persisted=JSON.parse(await readFile(join(temp,'cms.json'),'utf8'));if(!persisted.content.some(x=>x.title===title))throw new Error('Sunucu yeniden başlayınca veri kayboldu');if(persisted.content.some(x=>/^https?:\/\/(?:www\.)?peyzajder\.org/i.test(String(x.sourceUrl||''))))throw new Error('Eski kaynak bağlantısı kalıcı veriden temizlenmedi');
-  console.log('API, site özelleştirme, üyelik onayı, yazar kategori koruması, aidat mükerrer/geri alma kontrolü, davetiye, mesajlaşma, Türkçe veri ve yeniden başlatma testi başarılı.');
+  console.log('API, etkinlik düzenleme ve fotoğraf bağlantısı, site özelleştirme, üyelik onayı, yazar kategori koruması, aidat mükerrer/geri alma kontrolü, davetiye, mesajlaşma, Türkçe veri ve yeniden başlatma testi başarılı.');
 }finally{await stop();await rm(temp,{recursive:true,force:true})}
