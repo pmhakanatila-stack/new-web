@@ -53,6 +53,43 @@ function canonicalizeEvents(value){
   value.content=value.content.filter(item=>item.category!=='etkinlikler');
   return changed+legacy.length;
 }
+function enrichGrassSeminarEvent(value){
+  const matches=item=>String(item?.title||'').toLocaleLowerCase('tr-TR').includes('performans odaklı peyzajda çim');
+  const article=(value.content||[]).filter(matches).sort((a,b)=>(b.images?.length||0)-(a.images?.length||0))[0];
+  const candidates=(value.events||[]).filter(matches);
+  const target=candidates.find(item=>item.id==='event-content-53')||candidates[0];
+  if(!target&&!article)return 0;
+  if(target?.migrationVersion==='grass-seminar-v1'&&!article&&candidates.length===1)return 0;
+  const event=target||{id:'event-content-53',category:'etkinlikler',createdAt:new Date().toISOString()};
+  if(!target)value.events.unshift(event);
+  const image=article?.image||'assets/migrated/news/sektorel-seminerler-performans-odakli-peyzajda-cim/01.webp';
+  const images=Array.isArray(article?.images)&&article.images.length?[...article.images]:Array.from({length:9},(_,index)=>`assets/migrated/news/sektorel-seminerler-performans-odakli-peyzajda-cim/${String(index+1).padStart(2,'0')}.webp`);
+  Object.assign(event,{
+    title:'Sektörel Seminerler: Performans Odaklı Peyzajda Çim',
+    category:'etkinlikler',
+    status:'Yayında',
+    summary:'PEYZAJDER Sektörel Seminerler Serisi’nin ilk buluşmasında çim türleri, doğru tür seçimi, tesis ve bakım uygulamaları ele alındı.',
+    seoDescription:'PEYZAJDER’in Performans Odaklı Peyzajda Çim seminerinde serin ve sıcak iklim çimleri, tesis, bakım ve sürdürülebilir uygulamalar değerlendirildi.',
+    body:[
+      '10 Nisan 2026 tarihinde gerçekleştirdiğimiz Sektörel Seminerler Serisi’nin ilk buluşmasını başarıyla tamamladık.',
+      '“Performans Odaklı Peyzajda Çim” başlığı altında; serin iklim ve sıcak iklim çim türleri, çim tesisi sürecinde dikkat edilmesi gereken teknik ayrıntılar ve doğru tür seçiminin önemi üzerine kapsamlı bir değerlendirme yaptık.',
+      'Aynı alan içerisinde dahi bakı, toprak yapısı, su varlığı ve bakım kriterlerinin nasıl farklı sonuçlar doğurabileceğini birlikte ele alarak uygulamaya dönük önemli çıkarımlar elde ettik.',
+      'Sektör profesyonelleri ve öğrenci topluluklarının katılımıyla gerçekleşen bu buluşma, bilgi paylaşımının ve ortak aklın ne kadar kıymetli olduğunu bir kez daha ortaya koydu. Katılımcılarımızla birlikte yalnızca teorik bilgileri değil, sahada karşılığı olan pratik yaklaşımları da tartışma fırsatı bulduk.',
+      'Dernek yönetimi olarak temel hedefimiz; doğru bilgiyi yaygınlaştırmak, mesleki standartları güçlendirmek ve peyzaj uygulamalarında sürdürülebilir, verimli ve bilinçli yaklaşımların benimsenmesine katkı sağlamaktır. Bu doğrultuda düzenli seminer ve etkinliklerle sektöre değer katmaya devam edeceğiz.',
+      'Değerli katkıları için konuşmacımız Sayın Alpaslan Ünal’a; tohum ve rulo çim üreticisi olmasının yanı sıra sahada aktif uygulayıcı kimliğiyle paylaştığı bilgi ve deneyimler için teşekkür ederiz. Kendisinin derneğimizin kurumsal üyesi olması bizler için ayrıca değer taşımaktadır.',
+      'Katılım sağlayan, katkı sunan ve bu sürecin parçası olan tüm meslektaşlarımıza ve öğrenci arkadaşlarımıza teşekkür ederiz. Birlikte öğrenmeye, üretmeye ve geliştirmeye devam edeceğiz.'
+    ].map(paragraph=>`<p>${paragraph}</p>`).join(''),
+    date:'2026-04-10T18:00',
+    location:'',
+    image,
+    images,
+    migrationVersion:'grass-seminar-v1',
+    updatedAt:new Date().toISOString()
+  });
+  value.events=value.events.filter(item=>item===event||!matches(item));
+  value.content=value.content.filter(item=>!matches(item)||item.category==='duyurular');
+  return 1;
+}
 async function readJson(path){return JSON.parse((await readFile(path,'utf8')).replace(/^\uFEFF/,''))}
 async function initialDb(){
   try{return normalizeDb(await readJson(dbFile))}catch{}
@@ -99,6 +136,8 @@ if(!(db.settings||[]).some(x=>x.key===defaultBankSeedKey)){
 if(!db.content.length){try{const source=JSON.parse((await readFile(join(root,'content-data.json'),'utf8')).replace(/^\uFEFF/,''));db.content=source.pages.filter(x=>x.title&&!x.error).map((x,i)=>({id:`content-${i+1}`,title:x.title,category:x.category,status:'Yayında',summary:x.paragraphs?.[0]||'',body:(x.paragraphs||[]).join('\n\n'),image:x.images?.[0]?.src||'',createdAt:new Date().toISOString()}));db.events=db.content.filter(x=>x.category==='etkinlikler').map(x=>({...x,id:`event-${x.id}`}));await save(db)}catch{}}
 const canonicalizedEventCount=canonicalizeEvents(db);
 if(canonicalizedEventCount)await save(db);
+const enrichedGrassSeminarCount=enrichGrassSeminarEvent(db);
+if(enrichedGrassSeminarCount)await save(db);
 const json=(res,status,data,headers={})=>{res.writeHead(status,{'Content-Type':'application/json; charset=utf-8',...headers});res.end(JSON.stringify(data))};
 const withBase=p=>`${BASE_PATH}${p.startsWith('/')?p:`/${p}`}`;
 const body=async req=>{const parts=[];for await(const c of req)parts.push(c);if(!parts.length)return{};const data=JSON.parse(Buffer.concat(parts).toString('utf8')),pathname=new URL(req.url||'/',`http://${req.headers.host||'localhost'}`).pathname,collection=pathname.startsWith('/api/author/articles')?'articles':pathname.split('/').filter(Boolean)[1]||'';return sanitizeRichRecord(collection,data)};

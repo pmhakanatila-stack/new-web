@@ -19,6 +19,7 @@ try{
   const login=await request('/api/login',{method:'POST',body:{username:'smoke-admin',password:'Smoke!2026'}}),adminCookie=login.cookie;
   const migratedEvents=await request('/api/events',{cookie:adminCookie});
   if(!migratedEvents.data.length||!migratedEvents.data.every(x=>x.title&&(x.body||x.description)))throw new Error('Eski etkinlikler dolu etkinlik kayıtlarına taşınmadı');
+  const grassSeminar=migratedEvents.data.find(x=>String(x.title||'').includes('Performans Odaklı Peyzajda Çim'));if(!grassSeminar||grassSeminar.date!=='2026-04-10T18:00'||grassSeminar.images?.length!==9||!grassSeminar.body.includes('Alpaslan Ünal'))throw new Error('Performans Odaklı Peyzajda Çim etkinliği metin ve galerisiyle aktarılmadı');
   const eventIds=home.data.etkinlikler.map(x=>x.id);if(new Set(eventIds).size!==eventIds.length)throw new Error('Ana sayfada mükerrer etkinlik kaydı var');
   const editableEvent=migratedEvents.data[0];
   await request(`/api/events/${editableEvent.id}`,{method:'PUT',cookie:adminCookie,body:{...editableEvent,summary:'Düzenleme bağlantısı testi',body:'<p>Etkinlik düzenleme metni</p>',description:'<p>Etkinlik düzenleme metni</p>',image:'uploads/event-cover.webp',images:['uploads/event-gallery.webp']}});
