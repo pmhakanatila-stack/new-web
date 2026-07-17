@@ -39,9 +39,11 @@ try{
   const emailCampaign=await request('/api/emailCampaigns',{method:'POST',cookie:adminCookie,body:{title:'Gönderim ayarı testi',subject:'Test',audience:'E-bülten aboneleri',body:'Test',status:'Hazır'}});
   const unconfiguredSend=await requestFailure('/api/communications/email/send',{method:'POST',cookie:adminCookie,body:{campaignId:emailCampaign.data.id}});if(!String(unconfiguredSend.message).includes('409'))throw new Error('E-posta servisi ayarsızken gönderim engellenmedi');
   const legacyFixture=['https://www.','peyzajder.org/eski-haber'].join('');
-  const created=await request('/api/content',{method:'POST',cookie:adminCookie,body:{title,category:'haberler',summary:'Türkçe içerik',body:'İçerik metni',sourceUrl:legacyFixture,status:'Yayında'}});
+  const galleryImages=['uploads/smoke-gallery-1.webp','uploads/smoke-gallery-2.webp'];
+  const richImageBody='<p>İçerik metni</p><figure class="article-inline-image"><img src="uploads/smoke-gallery-1.webp" alt=""><figcaption>Deneme görseli</figcaption></figure>';
+  const created=await request('/api/content',{method:'POST',cookie:adminCookie,body:{title,category:'haberler',summary:'Türkçe içerik',body:richImageBody,image:'uploads/smoke-cover.webp',images:galleryImages,sourceUrl:legacyFixture,status:'Yayında'}});
   const item=await request(`/api/content/${created.data.id}`,{cookie:adminCookie});if(item.data.title!==title)throw new Error('Türkçe içerik korunmadı');
-  const publicItem=await request(`/api/public/item?id=${encodeURIComponent(created.data.id)}`);if(publicItem.data.sourceUrl)throw new Error('Eski peyzajder.org kaynak bağlantısı ziyaretçi API’sine sızdı');
+  const publicItem=await request(`/api/public/item?id=${encodeURIComponent(created.data.id)}`);if(publicItem.data.sourceUrl)throw new Error('Eski peyzajder.org kaynak bağlantısı ziyaretçi API’sine sızdı');if(publicItem.data.image!=='uploads/smoke-cover.webp'||publicItem.data.images.length!==2)throw new Error('Kapak ve içerik galerisi ayrı korunmadı');if(!publicItem.data.body.includes('<img src="uploads/smoke-gallery-1.webp"'))throw new Error('Metin içi görsel güvenli içerikten silindi');
   const email=`smoke-${Date.now()}@example.test`;
   const registration=await request('/api/register',{method:'POST',body:{name:'Öykü Çağlar',email,phone:'0532 555 12 34',password:'Deneme!2026',membershipType:'Kurumsal'}}),memberCookie=registration.cookie;
   const pending=await request('/api/member/me',{cookie:memberCookie});if(pending.data.membershipApproved||pending.data.panelType!=='application')throw new Error('Onaysız üye yanlış panele yönlendirildi');if(pending.data.finance?.bankAccount)throw new Error('Banka hesabı onaysız üyeye gösterildi');

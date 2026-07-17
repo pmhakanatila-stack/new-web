@@ -471,6 +471,61 @@ async function compressAndUploadImage(file){
   return uploaded.url;
 }
 
+function contentImageList(item){
+  const images=Array.isArray(item?.images)?item.images:[];
+  return images.map(image=>typeof image==='string'?image:image?.src||image?.url||'').filter(image=>image&&image!==item?.image);
+}
+function contentGalleryHtml(item){
+  const images=contentImageList(item);
+  return `<section class="full content-gallery-editor">
+    <div class="content-gallery-heading"><div><b>İçerik fotoğrafları</b><small>Haber veya etkinlik metninde kullanılacak ve sayfanın sonunda galeri olarak gösterilecek fotoğraflar.</small></div><label class="content-gallery-upload">+ Fotoğraf ekle<input id="contentGalleryFiles" type="file" accept="image/*" multiple></label></div>
+    <input id="contentGalleryValue" name="images" type="hidden" value="${escapeHtml(JSON.stringify(images))}">
+    <div id="contentGalleryItems" class="content-gallery-items"></div>
+    <p class="content-gallery-help">Birden fazla JPG, PNG veya WebP seçebilirsiniz. Tümü WebP olarak küçültülür. “Metne ekle” fotoğrafı metindeki imleç konumuna yerleştirir; fotoğraf ayrıca aşağıdaki galeride kalır.</p>
+  </section>`;
+}
+function bindContentGalleryUploads(root=$('#formFields')){
+  const hidden=root.querySelector('#contentGalleryValue'),list=root.querySelector('#contentGalleryItems'),picker=root.querySelector('#contentGalleryFiles');
+  if(!hidden||!list||!picker)return;
+  const read=()=>{try{return JSON.parse(hidden.value||'[]').filter(Boolean)}catch{return[]}};
+  const write=images=>{hidden.value=JSON.stringify(images);draw()};
+  const insertIntoBody=url=>{
+    const textarea=root.querySelector('textarea[name="body"]'),editor=textarea?._richEditor;
+    if(!textarea||!editor)return toast('Önce içerik metni alanını açın');
+    editor.focus();
+    document.execCommand('insertHTML',false,`<figure class="article-inline-image"><img src="${escapeHtml(url)}" alt=""><figcaption></figcaption></figure><p><br></p>`);
+    window.PeyzajRichEditor?.sync(textarea);
+    toast('Fotoğraf metne eklendi');
+  };
+  const draw=()=>{
+    const images=read();
+    list.innerHTML=images.length?images.map((url,index)=>`<article><img src="${escapeHtml(url)}" alt="İçerik fotoğrafı ${index+1}"><div><span>${String(index+1).padStart(2,'0')}</span><button type="button" data-gallery-insert="${index}">Metne ekle</button><button type="button" data-gallery-up="${index}" ${index===0?'disabled':''}>Yukarı</button><button type="button" data-gallery-remove="${index}">Kaldır</button></div></article>`).join(''):'<p class="empty">Henüz içerik fotoğrafı eklenmedi.</p>';
+    list.querySelectorAll('[data-gallery-insert]').forEach(button=>button.onclick=()=>insertIntoBody(images[Number(button.dataset.galleryInsert)]));
+    list.querySelectorAll('[data-gallery-up]').forEach(button=>button.onclick=()=>{const index=Number(button.dataset.galleryUp);if(index<1)return;[images[index-1],images[index]]=[images[index],images[index-1]];write(images)});
+    list.querySelectorAll('[data-gallery-remove]').forEach(button=>button.onclick=()=>{images.splice(Number(button.dataset.galleryRemove),1);write(images)});
+  };
+  picker.onchange=async event=>{
+    const files=[...(event.target.files||[])];if(!files.length)return;
+    const images=read();
+    try{
+      for(let index=0;index<files.length;index++){toast(`${index+1}/${files.length} fotoğraf WebP olarak hazırlanıyor...`);images.push(await compressAndUploadImage(files[index]))}
+      write(images);picker.value='';toast(`${files.length} içerik fotoğrafı yüklendi`);
+    }catch(error){write(images);toast(error.message||'İçerik fotoğrafları yüklenemedi')}
+  };
+  draw();
+}
+function contentMediaFields(item){
+  return `<label class="full image-field cover-image-field"><b>Başlık / kapak / slayt görseli</b><small>Liste kartında, ana sayfa slaytında ve içerik sayfasının üst bölümünde kullanılan tek ana görsel.</small><input id="contentImageFile" type="file" accept="image/*"><input id="contentImagePath" name="image" type="text" value="${escapeHtml(item?.image||'')}" placeholder="Yüklendiğinde otomatik dolacak">${item?.image?`<img class="content-image-preview" src="${escapeHtml(item.image)}" alt="">`:''}</label>${contentGalleryHtml(item)}`;
+}
+function bindContentMediaFields(){
+  const input=$('#contentImageFile');
+  if(input)input.onchange=async event=>{
+    const file=event.target.files?.[0];if(!file)return;
+    try{toast('Kapak görseli WebP olarak hazırlanıyor...');const url=await compressAndUploadImage(file);$('#contentImagePath').value=url;$('.cover-image-field .content-image-preview')?.remove();$('#contentImagePath').insertAdjacentHTML('afterend',`<img class="content-image-preview" src="${escapeHtml(url)}" alt="">`);toast('Kapak / slayt görseli yüklendi')}catch(error){toast(error.message||'Kapak görseli yüklenemedi')}
+  };
+  bindContentGalleryUploads();
+}
+
 async function renderContentCategoryManager(view){
   const cfg=contentViewConfig(view),meta=smartMeta(view);if(!cfg)return renderSmartModule(view);
   state.view=view;
@@ -524,16 +579,33 @@ function openContentCategoryEditor(item=null,view=state.view){
     <label class="full">İçerik<textarea name="body" rows="9" data-rich-editor placeholder="${escapeHtml(cfg.singular)} detay metni">${escapeHtml(item?.body||'')}</textarea></label>
     <label>Durum<select name="status">${['Yayında','Taslak','Beklemede','Pasif'].map(s=>`<option ${s===(item?.status||'Yayında')?'selected':''}>${s}</option>`).join('')}</select></label>
     <label>Tarih<input name="date" type="date" value="${escapeHtml(String(item?.date||item?.createdAt||'').slice(0,10))}"></label>
-    <label class="full image-field">Görsel yükle<input id="contentImageFile" type="file" accept="image/*"><input id="contentImagePath" name="image" type="text" value="${escapeHtml(item?.image||'')}" placeholder="Yüklendiğinde otomatik dolacak"><small>JPG/PNG/WebP yükleyebilirsiniz; sistem WebP olarak hafifletip kaydeder.</small>${item?.image?`<img class="content-image-preview" src="${escapeHtml(item.image)}" alt="">`:''}</label>
+    ${contentMediaFields(item)}
   </div>`;
-  $('#contentImageFile').onchange=async e=>{
-    const file=e.target.files?.[0];if(!file)return;
-    try{toast('Görsel dönüştürülüp yükleniyor...');const url=await compressAndUploadImage(file);$('#contentImagePath').value=url;$('.content-image-preview').remove();$('#contentImagePath').insertAdjacentHTML('afterend',`<img class="content-image-preview" src="${escapeHtml(url)}" alt="">`);toast('Görsel WebP olarak yüklendi')}catch(err){toast(err.message||'Görsel yüklenemedi')}
-  };
   $('#editor').showModal();
+  window.PeyzajRichEditor?.mountAll($('#formFields'));
+  bindContentMediaFields();
+}
+
+function openEventEditor(item=null){
+  state.edit=item;
+  $('#formEyebrow').textContent=item?'ETKİNLİĞİ DÜZENLE':'YENİ ETKİNLİK';
+  $('#formTitle').textContent=item?.title||'Yeni etkinlik';
+  $('#formFields').innerHTML=`<div class="field-grid content-editor-grid">
+    <label class="full">Başlık<input name="title" type="text" value="${escapeHtml(item?.title||'')}" required></label>
+    <label>Etkinlik tarihi<input name="date" type="date" value="${escapeHtml(String(item?.date||item?.createdAt||'').slice(0,10))}"></label>
+    <label>Konum<input name="location" type="text" value="${escapeHtml(item?.location||'')}"></label>
+    <label class="full">Kısa özet<textarea name="summary" placeholder="Ana sayfa kartında ve slaytta görünecek kısa metin">${escapeHtml(item?.summary||'')}</textarea></label>
+    <label class="full">Etkinlik içeriği<textarea name="body" rows="10" data-rich-editor placeholder="Etkinlik detay metni">${escapeHtml(item?.body||item?.description||'')}</textarea></label>
+    <label>Durum<select name="status">${['Yayında','Taslak','Beklemede','Pasif'].map(status=>`<option ${status===(item?.status||'Yayında')?'selected':''}>${status}</option>`).join('')}</select></label>
+    ${contentMediaFields(item)}
+  </div>`;
+  $('#editor').showModal();
+  window.PeyzajRichEditor?.mountAll($('#formFields'));
+  bindContentMediaFields();
 }
 
 openEditor=function(item=null){
+  if(state.view==='events')return openEventEditor(item);
   state.edit=item;
   $('#formEyebrow').textContent=item?'KAYDI DÜZENLE':'YENİ KAYIT';
   $('#formTitle').textContent=item?(item.title||item.name||'Kaydı düzenle'):`Yeni ${modules[state.view]?.[0]||'kayıt'} kaydı`;
@@ -696,6 +768,7 @@ $('#editorForm').onsubmit=async e=>{
     e.preventDefault();
     const cfg=contentViewConfig(state.view),data=Object.fromEntries(new FormData(e.target));
     data.category=cfg.category;
+    try{data.images=JSON.parse(data.images||'[]')}catch{data.images=[]}
     if(!data.summary&&data.seoDescription)data.summary=data.seoDescription;
     try{
       await api(state.edit?`content/${state.edit.id}`:'content',{method:state.edit?'PUT':'POST',body:JSON.stringify(data)});
@@ -703,6 +776,17 @@ $('#editorForm').onsubmit=async e=>{
       toast(`${cfg.singular} kaydedildi`);
       renderContentCategoryManager(state.view);
     }catch(x){toast(x.message)}
+    return;
+  }
+  if(state.view==='events'){
+    e.preventDefault();
+    const data=Object.fromEntries(new FormData(e.target));
+    try{data.images=JSON.parse(data.images||'[]')}catch{data.images=[]}
+    data.description=data.body||'';
+    try{
+      await api(state.edit?`events/${state.edit.id}`:'events',{method:state.edit?'PUT':'POST',body:JSON.stringify({...state.edit,...data})});
+      $('#editor').close();toast('Etkinlik kaydedildi');renderSmartModule('events');
+    }catch(error){toast(error.message)}
     return;
   }
   if(document.querySelector('#smartRows')&&state.view!=='dues'){

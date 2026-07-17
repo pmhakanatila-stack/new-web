@@ -1,6 +1,6 @@
 (()=>{
   const esc=value=>String(value||'').replace(/[&<>]/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[char]));
-  const asHtml=value=>/<\/?(?:p|h2|h3|strong|b|em|i|u|ul|ol|li|blockquote|a|br)\b/i.test(String(value||''))
+  const asHtml=value=>/<\/?(?:p|h2|h3|strong|b|em|i|u|ul|ol|li|blockquote|a|br|figure|figcaption|img)\b/i.test(String(value||''))
     ?String(value||'')
     :String(value||'').split(/\n{2,}/).map(part=>`<p>${esc(part).replace(/\n/g,'<br>')}</p>`).join('');
   const buttons=[
