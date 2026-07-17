@@ -90,6 +90,44 @@ function enrichGrassSeminarEvent(value){
   value.content=value.content.filter(item=>!matches(item)||item.category==='duyurular');
   return 1;
 }
+function enrichYapiderPresentationEvent(value){
+  const matches=item=>{
+    const title=String(item?.title||'').toLocaleLowerCase('tr-TR');
+    return title.includes('yatırım profesyonelleri ve iş birliği derneği')&&title.includes('kapsamlı bir sunum');
+  };
+  const candidates=(value.events||[]).filter(matches);
+  const target=candidates.find(item=>item.id==='event-content-51')||candidates[0];
+  const legacy=(value.content||[]).find(matches);
+  if(!target&&!legacy)return 0;
+  if(target?.migrationVersion==='yapider-presentation-v1'&&!legacy&&candidates.length===1)return 0;
+  const event=target||{id:'event-content-51',category:'etkinlikler',createdAt:new Date().toISOString()};
+  if(!target)value.events.unshift(event);
+  Object.assign(event,{
+    title:'YAPİDER Buluşması: Peyzajın Satış ve Mülk Değerine Etkisi',
+    category:'etkinlikler',
+    status:'Yayında',
+    summary:'YAPİDER ve PEYZAJDER üyelerinin katıldığı buluşmada nitelikli peyzaj uygulamalarının satış ve mülk değerine etkisi ele alındı.',
+    seoDescription:'YAPİDER ve PEYZAJDER buluşmasında peyzajın gayrimenkul değerine etkisi, kurakçıl peyzaj, performans standartları ve uygulama çözümleri konuşuldu.',
+    body:[
+      '<p>Yatırım Profesyonelleri ve İş Birliği Derneği (YAPİDER) ile Peyzaj Mimarları ve Sektör Profesyonelleri Derneği (PEYZAJDER) üyelerinin yoğun katılımıyla, gayrimenkul sektörüne yön veren kapsamlı bir sunum gerçekleştirdik.</p>',
+      '<p>PEYZAJDER Yönetim Kurulu Başkanı Fulya Akfidan Sevim tarafından yapılan “Peyzaj Uygulamalarının Satış ve Mülk Değerine Etkisi” başlıklı sunum, sektör temsilcilerinden büyük ilgi gördü.</p>',
+      '<p>Etkinlik boyunca şu başlıklar somut örneklerle ele alındı:</p>',
+      '<ul><li>Nitelikli peyzajın gayrimenkul değerine etkisi</li><li>Doğru bitkilendirme ve kurakçıl peyzaj yaklaşımı</li><li>Performans bazlı peyzaj standartları</li><li>Sektörde sık yapılan hatalar ve çözüm önerileri</li></ul>',
+      '<p>Etkinlik sonunda YAPİDER tarafından sunumumuza verilen plaket, iş birliğimizin güçlenerek devam edeceğinin değerli bir göstergesi oldu. Nazik davetleri ve bu anlamlı takdimleri için kendilerine teşekkür ediyoruz.</p>',
+      '<p>PEYZAJDER olarak; gayrimenkul geliştirme, müteahhitlik sektörü, organize sanayi bölgeleri, belediyeler ve kamu kurumları başta olmak üzere peyzaj tabanlı sürdürülebilirlik, yeşil dönüşüm, karbon yönetimi ve performans bazlı peyzaj projeleri alanlarında bilgi paylaşmaya, eğitim ve sunumlar gerçekleştirmeye hazırız.</p>',
+      '<p>Şehirler için daha yaşanabilir, daha dirençli ve daha değerli bir gelecek birlikte mümkün. PEYZAJDER olarak katkı vermekten gurur duyuyoruz.</p>'
+    ].join(''),
+    date:'2025-11-30T17:00',
+    location:'YAPİDER',
+    image:'assets/migrated/events/yapider-gayrimenkul-sunumu/01.webp',
+    images:['assets/migrated/events/yapider-gayrimenkul-sunumu/01.webp'],
+    migrationVersion:'yapider-presentation-v1',
+    updatedAt:new Date().toISOString()
+  });
+  value.events=value.events.filter(item=>item===event||!matches(item));
+  value.content=value.content.filter(item=>!matches(item)||item.category==='duyurular');
+  return 1;
+}
 async function readJson(path){return JSON.parse((await readFile(path,'utf8')).replace(/^\uFEFF/,''))}
 async function initialDb(){
   try{return normalizeDb(await readJson(dbFile))}catch{}
@@ -138,6 +176,8 @@ const canonicalizedEventCount=canonicalizeEvents(db);
 if(canonicalizedEventCount)await save(db);
 const enrichedGrassSeminarCount=enrichGrassSeminarEvent(db);
 if(enrichedGrassSeminarCount)await save(db);
+const enrichedYapiderPresentationCount=enrichYapiderPresentationEvent(db);
+if(enrichedYapiderPresentationCount)await save(db);
 const json=(res,status,data,headers={})=>{res.writeHead(status,{'Content-Type':'application/json; charset=utf-8',...headers});res.end(JSON.stringify(data))};
 const withBase=p=>`${BASE_PATH}${p.startsWith('/')?p:`/${p}`}`;
 const body=async req=>{const parts=[];for await(const c of req)parts.push(c);if(!parts.length)return{};const data=JSON.parse(Buffer.concat(parts).toString('utf8')),pathname=new URL(req.url||'/',`http://${req.headers.host||'localhost'}`).pathname,collection=pathname.startsWith('/api/author/articles')?'articles':pathname.split('/').filter(Boolean)[1]||'';return sanitizeRichRecord(collection,data)};

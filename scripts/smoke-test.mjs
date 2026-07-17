@@ -20,6 +20,7 @@ try{
   const migratedEvents=await request('/api/events',{cookie:adminCookie});
   if(!migratedEvents.data.length||!migratedEvents.data.every(x=>x.title&&(x.body||x.description)))throw new Error('Eski etkinlikler dolu etkinlik kayıtlarına taşınmadı');
   const grassSeminar=migratedEvents.data.find(x=>String(x.title||'').includes('Performans Odaklı Peyzajda Çim'));if(!grassSeminar||grassSeminar.date!=='2026-04-10T18:00'||grassSeminar.images?.length!==9||!grassSeminar.body.includes('Alpaslan Ünal'))throw new Error('Performans Odaklı Peyzajda Çim etkinliği metin ve galerisiyle aktarılmadı');
+  const yapiderPresentation=migratedEvents.data.find(x=>String(x.title||'').includes('YAPİDER Buluşması'));if(!yapiderPresentation||yapiderPresentation.date!=='2025-11-30T17:00'||yapiderPresentation.images?.length!==1||!yapiderPresentation.body.includes('kurakçıl peyzaj'))throw new Error('YAPİDER sunumu etkinlik metni ve görseliyle aktarılmadı');
   const eventIds=home.data.etkinlikler.map(x=>x.id);if(new Set(eventIds).size!==eventIds.length)throw new Error('Ana sayfada mükerrer etkinlik kaydı var');
   const editableEvent=migratedEvents.data[0];
   await request(`/api/events/${editableEvent.id}`,{method:'PUT',cookie:adminCookie,body:{...editableEvent,summary:'Düzenleme bağlantısı testi',body:'<p>Etkinlik düzenleme metni</p>',description:'<p>Etkinlik düzenleme metni</p>',image:'uploads/event-cover.webp',images:['uploads/event-gallery.webp']}});
