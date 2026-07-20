@@ -8,6 +8,10 @@ const normalizedBase=String(process.env.PEYZAJDER_BASE_PATH||'').trim().replace(
 const BASE_PATH=normalizedBase==='/'?'':normalizedBase;
 const COOKIE_PATH=BASE_PATH||'/';
 const PORT=Number(process.env.PORT||4173), HOST=process.env.PEYZAJDER_HOST||'0.0.0.0', USER=process.env.PEYZAJDER_ADMIN_USER||'admin', PASSWORD=process.env.PEYZAJDER_ADMIN_PASSWORD||'Peyzajder!2026';
+if((process.env.NODE_ENV||'')==='production'&&(!process.env.PEYZAJDER_ADMIN_USER||!process.env.PEYZAJDER_ADMIN_PASSWORD)){
+  console.error('HATA: NODE_ENV=production iken PEYZAJDER_ADMIN_USER ve PEYZAJDER_ADMIN_PASSWORD ortam degiskenleri tanimlanmadan sunucu baslatilamaz (varsayilan admin/Peyzajder!2026 herkesce tahmin edilebilir). Hosting panelinden bu degiskenleri ayarlayip tekrar baslatin.');
+  process.exit(1);
+}
 const sessions=new Map(),resetTokens=new Map();
 const types={'.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.js':'text/javascript; charset=utf-8','.json':'application/json; charset=utf-8','.png':'image/png','.jpg':'image/jpeg','.jpeg':'image/jpeg','.webp':'image/webp','.svg':'image/svg+xml'};
 const collections=['content','events','boards','members','firms','accounts','memberGroups','applications','dues','duePeriods','payments','businessLedger','decisions','subscribers','emailCampaigns','smsCampaigns','notifications','invitations','memberMessages','notificationReads','surveys','galleries','videos','articles','authors','publications','webinars','menus','sliders','promoPanels','socialLinks','sponsors','sponsorCategories','jobPosts','bankAccounts','contactMessages','supportTickets','settings','users','modules'];
