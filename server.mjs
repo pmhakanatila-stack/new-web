@@ -14,6 +14,14 @@ if((process.env.NODE_ENV||'')==='production'&&(!process.env.PEYZAJDER_ADMIN_USER
 }
 const sessions=new Map(),resetTokens=new Map();
 const types={'.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.js':'text/javascript; charset=utf-8','.json':'application/json; charset=utf-8','.png':'image/png','.jpg':'image/jpeg','.jpeg':'image/jpeg','.webp':'image/webp','.svg':'image/svg+xml'};
+const blockedStaticFiles=new Set(['/server.mjs','/package.json','/package-lock.json','/render.yaml']);
+const isBlockedStaticPath=(requestPath,resolvedFile)=>{
+  if(resolvedFile===dataDir||resolvedFile.startsWith(dataDir+'/'))return true;
+  const segments=requestPath.split('/').filter(Boolean);
+  if(segments.some(seg=>seg.startsWith('.')||seg==='node_modules'||seg==='scripts'))return true;
+  if(blockedStaticFiles.has(requestPath))return true;
+  return false;
+};
 const collections=['content','events','boards','members','firms','accounts','memberGroups','applications','dues','duePeriods','payments','businessLedger','decisions','subscribers','emailCampaigns','smsCampaigns','notifications','invitations','memberMessages','notificationReads','surveys','galleries','videos','articles','authors','publications','webinars','menus','sliders','promoPanels','socialLinks','sponsors','sponsorCategories','jobPosts','bankAccounts','contactMessages','supportTickets','settings','users','modules'];
 await mkdir(dataDir,{recursive:true});await mkdir(uploadDir,{recursive:true});
 
@@ -572,7 +580,7 @@ async function api(req,res,url){
   return json(res,405,{error:'Yöntem desteklenmiyor'});
 }
 
-const httpServer=createServer(async(req,res)=>{try{const url=new URL(req.url||'/',`http://${req.headers.host||'localhost'}`);if(BASE_PATH&&(url.pathname===BASE_PATH||url.pathname.startsWith(`${BASE_PATH}/`)))url.pathname=url.pathname.slice(BASE_PATH.length)||'/';if(url.pathname.startsWith('/api/'))return await api(req,res,url);let path=decodeURIComponent(url.pathname);if(path==='/')path='/index.html';const file=normalize(join(root,path));if(!file.startsWith(root))throw new Error();const info=await stat(file);if(!info.isFile())throw new Error();const ext=extname(file);res.writeHead(200,{'Content-Type':types[ext]||'application/octet-stream','Cache-Control':'no-store','X-Content-Type-Options':'nosniff','X-Frame-Options':'SAMEORIGIN'});const raw=await readFile(file);if(ext==='.html'){const boot=`<script>window.PEYZAJDER_BASE_PATH=${JSON.stringify(BASE_PATH)};window.PEYZAJDER_API_BASE=${JSON.stringify(withBase('/api'))};window.peyzajderApiPath=function(path){return window.PEYZAJDER_API_BASE+String(path||'').replace(/^\\/api/,'');};</script><link rel="stylesheet" href="${withBase('/logo-override.css')}">`;const html=raw.toString('utf8').replace('</head>',`${boot}</head>`);return res.end(html)}res.end(raw)}catch(e){console.error('PEYZAJDER_LOCAL_SERVER_ERROR',req.method,req.url,e);res.writeHead(404,{'Content-Type':'text/plain; charset=utf-8'});res.end('Sayfa bulunamadı')}}).listen(PORT,HOST,()=>console.log(`PEYZAJDER CMS: http://${HOST}:${PORT}${BASE_PATH||''}`));
+const httpServer=createServer(async(req,res)=>{try{const url=new URL(req.url||'/',`http://${req.headers.host||'localhost'}`);if(BASE_PATH&&(url.pathname===BASE_PATH||url.pathname.startsWith(`${BASE_PATH}/`)))url.pathname=url.pathname.slice(BASE_PATH.length)||'/';if(url.pathname.startsWith('/api/'))return await api(req,res,url);let path=decodeURIComponent(url.pathname);if(path==='/')path='/index.html';const file=normalize(join(root,path));if(!file.startsWith(root))throw new Error();if(isBlockedStaticPath(path,file))throw new Error();const info=await stat(file);if(!info.isFile())throw new Error();const ext=extname(file);res.writeHead(200,{'Content-Type':types[ext]||'application/octet-stream','Cache-Control':'no-store','X-Content-Type-Options':'nosniff','X-Frame-Options':'SAMEORIGIN'});const raw=await readFile(file);if(ext==='.html'){const boot=`<script>window.PEYZAJDER_BASE_PATH=${JSON.stringify(BASE_PATH)};window.PEYZAJDER_API_BASE=${JSON.stringify(withBase('/api'))};window.peyzajderApiPath=function(path){return window.PEYZAJDER_API_BASE+String(path||'').replace(/^\\/api/,'');};</script><link rel="stylesheet" href="${withBase('/logo-override.css')}">`;const html=raw.toString('utf8').replace('</head>',`${boot}</head>`);return res.end(html)}res.end(raw)}catch(e){console.error('PEYZAJDER_LOCAL_SERVER_ERROR',req.method,req.url,e);res.writeHead(404,{'Content-Type':'text/plain; charset=utf-8'});res.end('Sayfa bulunamadı')}}).listen(PORT,HOST,()=>console.log(`PEYZAJDER CMS: http://${HOST}:${PORT}${BASE_PATH||''}`));
 
 
 for(const signal of ['SIGINT','SIGTERM'])process.on(signal,()=>httpServer.close(()=>process.exit(0)));
