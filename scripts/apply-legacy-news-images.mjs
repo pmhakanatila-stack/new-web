@@ -14,15 +14,22 @@ for (const relative of targets) {
   const file = path.resolve(root, relative);
   const data = JSON.parse(await readFile(file, "utf8"));
   const contents = data.contents || data.content || [];
+  let updated = 0;
+  let skipped = 0;
   for (const entry of manifest) {
     const item = contents.find((candidate) => candidate.id === entry.id);
-    if (!item) throw new Error(`${relative} icinde kayit bulunamadi: ${entry.id}`);
+    if (!item) {
+      console.warn(`${relative}: kayit bulunamadi, atlandi: ${entry.id}`);
+      skipped++;
+      continue;
+    }
     const paths = entry.images.map((image) => image.path);
     item.image = paths[0];
     item.images = paths;
     item.legacySourceUrl = "";
     item.sourceUrl = "";
+    updated++;
   }
   await writeFile(file, `${JSON.stringify(data, null, 2)}\n`, "utf8");
-  console.log(`${relative}: ${manifest.length} haber guncellendi`);
+  console.log(`${relative}: ${updated} haber guncellendi, ${skipped} atlandi`);
 }
