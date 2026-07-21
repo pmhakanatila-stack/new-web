@@ -2,7 +2,7 @@
   --admin-glow:rgba(189,214,110,.14);
 }
 
-.app aside{
+.app>aside{
   width:292px;
   padding:22px 16px;
   background:
@@ -365,8 +365,8 @@
 @media(max-width:640px){.module-console-hero,.module-guide,.module-records-head{padding:18px}.module-kpi-grid{grid-template-columns:1fr}.module-records-head>div:last-child{flex-direction:column}.module-action-row{align-items:stretch;flex-direction:column}.module-action-row .primary{width:100%}}
 
 @media(max-width:1000px){
-  .app aside{width:82px}
-  .app aside .logo span,.nav-group summary span,.app nav button span,.logout span{display:none}
+  .app>aside{width:82px}
+  .app>aside .logo span,.nav-group summary span,.app nav button span,.logout span{display:none}
   .app main{margin-left:82px}
   .nav-group summary{justify-content:center}
   .app nav button{justify-content:center}
@@ -387,8 +387,8 @@
     box-shadow:20px 0 60px rgba(4,20,11,.32);
   }
   .app.menu-open>aside{transform:translateX(0)}
-  .app aside .logo span,.nav-group summary span,.app nav button span,.logout span{display:block}
-  .app aside .logo{padding-bottom:14px}
+  .app>aside .logo span,.nav-group summary span,.app nav button span,.logout span{display:block}
+  .app>aside .logo{padding-bottom:14px}
   .app nav{padding-right:5px}
   .nav-group summary{justify-content:space-between}
   .app nav button{justify-content:flex-start;font-size:14px}
