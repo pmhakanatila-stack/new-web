@@ -75,7 +75,7 @@ function enrichGrassSeminarEvent(value){
   const candidates=(value.events||[]).filter(matches);
   const target=candidates.find(item=>item.id==='event-content-53')||candidates[0];
   if(!target&&!article)return 0;
-  if(target?.migrationVersion==='grass-seminar-v1'&&!article&&candidates.length===1)return 0;
+  if(target?.migrationVersion==='grass-seminar-v2'&&!article&&candidates.length===1)return 0;
   const event=target||{id:'event-content-53',category:'etkinlikler',createdAt:new Date().toISOString()};
   if(!target)value.events.unshift(event);
   const image=article?.image||'assets/migrated/news/sektorel-seminerler-performans-odakli-peyzajda-cim/01.webp';
@@ -99,7 +99,7 @@ function enrichGrassSeminarEvent(value){
     location:'',
     image,
     images,
-    migrationVersion:'grass-seminar-v1',
+    migrationVersion:'grass-seminar-v2',
     updatedAt:new Date().toISOString()
   });
   value.events=value.events.filter(item=>item===event||!matches(item));
@@ -115,7 +115,7 @@ function enrichYapiderPresentationEvent(value){
   const target=candidates.find(item=>item.id==='event-content-51')||candidates[0];
   const legacy=(value.content||[]).find(matches);
   if(!target&&!legacy)return 0;
-  if(target?.migrationVersion==='yapider-presentation-v1'&&!legacy&&candidates.length===1)return 0;
+  if(target?.migrationVersion==='yapider-presentation-v2'&&!legacy&&candidates.length===1)return 0;
   const event=target||{id:'event-content-51',category:'etkinlikler',createdAt:new Date().toISOString()};
   if(!target)value.events.unshift(event);
   Object.assign(event,{
@@ -137,7 +137,7 @@ function enrichYapiderPresentationEvent(value){
     location:'YAPİDER',
     image:'assets/migrated/events/yapider-gayrimenkul-sunumu/01.webp',
     images:['assets/migrated/events/yapider-gayrimenkul-sunumu/01.webp'],
-    migrationVersion:'yapider-presentation-v1',
+    migrationVersion:'yapider-presentation-v2',
     updatedAt:new Date().toISOString()
   });
   value.events=value.events.filter(item=>item===event||!matches(item));
@@ -152,12 +152,16 @@ async function applyLegacyContentRepair(value){
   if(!repair?.version)return 0;
   const listingTitles=new Set((repair.listingTitles||[]).map(repairKey));
   const removeIds=new Set((repair.removeIds||[]).map(String));
+  const preservesCuratedEvent=(target,patch)=>{
+    const id=String(patch?.id||'');
+    return (id==='event-content-53'&&target?.migrationVersion==='grass-seminar-v2')
+      ||(id==='event-content-51'&&target?.migrationVersion==='yapider-presentation-v2');
+  };
   const hasDirtyRows=['content','events'].some(collection=>(value[collection]||[]).some(item=>listingTitles.has(repairKey(item?.title))||removeIds.has(String(item?.id||''))));
-  const hasPatchMismatch=['content','events'].some(collection=>(repair[collection]||[]).some(patch=>{
-    const target=(value[collection]||[]).find(item=>String(item?.id||'')===String(patch.id||'')&&(!patch.category||item.category===patch.category));
-    return !target||Object.entries(patch).some(([key,nextValue])=>JSON.stringify(target[key])!==JSON.stringify(nextValue));
-  }));
-  if(value.legacyContentRepairVersion===repair.version&&!hasDirtyRows&&!hasPatchMismatch)return 0;
+  // Aynı migrasyon sürümü uygulandıktan sonra yönetim panelinde yapılan içerik
+  // düzenlemelerini eski manifest ile tekrar ezme. Yalnızca gerçekten silinmesi
+  // gereken kirli/liste kayıtları yeniden oluşmuşsa temizliği tekrarla.
+  if(value.legacyContentRepairVersion===repair.version&&!hasDirtyRows)return 0;
   let changed=0;
   for(const collection of ['content','events']){
     const before=value[collection].length;
@@ -168,6 +172,7 @@ async function applyLegacyContentRepair(value){
       let target=value[collection].find(item=>String(item?.id||'')===String(patch.id||'')&&(!patch.category||item.category===patch.category))
         ||value[collection].find(item=>legacyKey&&repairKey(item?.legacySourcePath)===legacyKey)
         ||value[collection].find(item=>titleKey&&repairKey(item?.title)===titleKey);
+      if(preservesCuratedEvent(target,patch))continue;
       if(!target){target={id:patch.id,createdAt:new Date().toISOString()};value[collection].push(target)}
       for(const [key,nextValue] of Object.entries(patch)){
         if(JSON.stringify(target[key])!==JSON.stringify(nextValue)){target[key]=nextValue;changed++}
