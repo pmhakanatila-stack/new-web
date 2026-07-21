@@ -14,7 +14,7 @@ if((process.env.NODE_ENV||'')==='production'&&(!process.env.PEYZAJDER_ADMIN_USER
 }
 const sessions=new Map(),resetTokens=new Map();
 const types={'.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.js':'text/javascript; charset=utf-8','.json':'application/json; charset=utf-8','.png':'image/png','.jpg':'image/jpeg','.jpeg':'image/jpeg','.webp':'image/webp','.svg':'image/svg+xml'};
-const blockedStaticFiles=new Set(['/server.mjs','/package.json','/package-lock.json','/render.yaml']);
+const blockedStaticFiles=new Set(['/server.mjs','/package.json','/package-lock.json','/render.yaml','/seed-cms.json','/content-data.json','/legacy-content-repair.json']);
 const isBlockedStaticPath=(requestPath,resolvedFile)=>{
   if(resolvedFile===dataDir||resolvedFile.startsWith(dataDir+'/'))return true;
   const segments=requestPath.split('/').filter(Boolean);
@@ -67,7 +67,7 @@ function canonicalizeEvents(value){
 }
 function enrichGrassSeminarEvent(value){
   const matches=item=>String(item?.title||'').toLocaleLowerCase('tr-TR').includes('performans odaklı peyzajda çim');
-  const article=(value.content||[]).filter(matches).sort((a,b)=>(b.images?.length||0)-(a.images?.length||0))[0];
+  const article=(value.content||[]).filter(item=>item.category==='haberler'&&matches(item)).sort((a,b)=>(b.images?.length||0)-(a.images?.length||0))[0];
   const candidates=(value.events||[]).filter(matches);
   const target=candidates.find(item=>item.id==='event-content-53')||candidates[0];
   if(!target&&!article)return 0;
@@ -141,6 +141,34 @@ function enrichYapiderPresentationEvent(value){
   return 1;
 }
 async function readJson(path){return JSON.parse((await readFile(path,'utf8')).replace(/^\uFEFF/,''))}
+const repairKey=value=>String(value||'').trim().toLocaleLowerCase('tr-TR').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,' ').trim();
+async function applyLegacyContentRepair(value){
+  let repair;
+  try{repair=await readJson(join(root,'legacy-content-repair.json'))}catch{return 0}
+  if(!repair?.version||value.legacyContentRepairVersion===repair.version)return 0;
+  const listingTitles=new Set((repair.listingTitles||[]).map(repairKey));
+  const removeIds=new Set((repair.removeIds||[]).map(String));
+  let changed=0;
+  for(const collection of ['content','events']){
+    const before=value[collection].length;
+    value[collection]=value[collection].filter(item=>!listingTitles.has(repairKey(item?.title))&&!removeIds.has(String(item?.id||'')));
+    changed+=before-value[collection].length;
+    for(const patch of repair[collection]||[]){
+      const legacyKey=repairKey(patch.legacySourcePath), titleKey=repairKey(patch.title);
+      let target=value[collection].find(item=>String(item?.id||'')===String(patch.id||''))
+        ||value[collection].find(item=>legacyKey&&repairKey(item?.legacySourcePath)===legacyKey)
+        ||value[collection].find(item=>titleKey&&repairKey(item?.title)===titleKey);
+      if(!target){target={id:patch.id,createdAt:new Date().toISOString()};value[collection].push(target)}
+      for(const [key,nextValue] of Object.entries(patch)){
+        if(JSON.stringify(target[key])!==JSON.stringify(nextValue)){target[key]=nextValue;changed++}
+      }
+      if(isLegacyPeyzajderSource(target.sourceUrl)){delete target.sourceUrl;changed++}
+      if(!target.updatedAt)target.updatedAt=new Date().toISOString();
+    }
+  }
+  value.legacyContentRepairVersion=repair.version;
+  return changed+1;
+}
 async function initialDb(){
   try{return normalizeDb(await readJson(dbFile))}catch{}
   try{return normalizeDb(await readJson(dbBackupFile))}catch{}
@@ -186,6 +214,8 @@ if(!(db.settings||[]).some(x=>x.key===defaultBankSeedKey)){
 if(!db.content.length){try{const source=JSON.parse((await readFile(join(root,'content-data.json'),'utf8')).replace(/^\uFEFF/,''));db.content=source.pages.filter(x=>x.title&&!x.error).map((x,i)=>({id:`content-${i+1}`,title:x.title,category:x.category,status:'Yayında',summary:x.paragraphs?.[0]||'',body:(x.paragraphs||[]).join('\n\n'),image:x.images?.[0]?.src||'',createdAt:new Date().toISOString()}));db.events=db.content.filter(x=>x.category==='etkinlikler').map(x=>({...x,id:`event-${x.id}`}));await save(db)}catch{}}
 const canonicalizedEventCount=canonicalizeEvents(db);
 if(canonicalizedEventCount)await save(db);
+const repairedLegacyContentCount=await applyLegacyContentRepair(db);
+if(repairedLegacyContentCount)await save(db);
 const enrichedGrassSeminarCount=enrichGrassSeminarEvent(db);
 if(enrichedGrassSeminarCount)await save(db);
 const enrichedYapiderPresentationCount=enrichYapiderPresentationEvent(db);
@@ -231,7 +261,7 @@ if(staffChanged)await save(db);
 const normText=s=>String(s||'').trim().toLocaleLowerCase('tr-TR');
 const richTags=new Set(['p','br','strong','b','em','i','u','h2','h3','ul','ol','li','blockquote','a','figure','figcaption','img']);
 function sanitizeRichHtml(value){let html=String(value||'').trim().replace(/<!--([\s\S]*?)-->/g,'').replace(/<(script|style|iframe|object|embed|form)[^>]*>[\s\S]*?<\/\1>/gi,'');return html.replace(/<\/?([a-z][a-z0-9]*)([^>]*)>/gi,(whole,rawTag,attrs)=>{const tag=String(rawTag).toLowerCase(),closing=whole.startsWith('</');if(!richTags.has(tag))return'';if(closing)return ['br','img'].includes(tag)?'':`</${tag}>`;if(tag==='br')return'<br>';if(tag==='img'){const match=String(attrs||'').match(/\bsrc\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/i),src=match?.[1]||match?.[2]||match?.[3]||'';if(!/^(?:uploads\/|assets\/|https?:\/\/)/i.test(src))return'';const safe=src.replace(/&/g,'&amp;').replace(/"/g,'&quot;');return`<img src="${safe}" alt="" loading="lazy">`}if(tag==='a'){const match=String(attrs||'').match(/\bhref\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/i),href=match?.[1]||match?.[2]||match?.[3]||'';if(!/^(https?:\/\/|mailto:|\/|#)/i.test(href))return'<a>';const safe=href.replace(/&/g,'&amp;').replace(/"/g,'&quot;');return`<a href="${safe}" target="_blank" rel="noopener">`}if(tag==='figure')return'<figure class="article-inline-image">';return`<${tag}>`})}
-function sanitizeRichRecord(name,item){const fields=name==='content'?['body']:name==='events'?['description','body']:name==='articles'?['body']:[];for(const field of fields)if(field in item)item[field]=sanitizeRichHtml(item[field]);return item}
+function sanitizeRichRecord(name,item){const fields=name==='content'?['body']:name==='events'?['description','body']:name==='articles'?['body']:[];for(const field of fields)if(field in item)item[field]=sanitizeRichHtml(item[field]);if(['content','events','articles','publications','webinars','galleries','videos'].includes(name)&&isLegacyPeyzajderSource(item?.sourceUrl))delete item.sourceUrl;return item}
 const settingValue=(keys,fallback='')=>{const wanted=keys.map(normText);const item=(db.settings||[]).find(x=>wanted.includes(normText(x.key||x.title)));return item?String(item.value??item.amount??''):fallback};
 const activeRecord=x=>!['pasif','taslak','arşiv','arsiv'].includes(normText(x?.status||'Aktif'));
 const configuredValue=(key,fallback='')=>settingValue([key],process.env[key.toUpperCase().replaceAll('.','_')]||fallback);
