@@ -357,8 +357,8 @@ async function fetchCompetitions(){
 async function api(req,res,url){
   if(url.pathname==='/api/health'&&req.method==='GET')return json(res,200,{ok:true,service:'peyzajder-cms',time:new Date().toISOString()});
   if(url.pathname==='/api/public/__diag'&&req.method==='GET'){
-    const c14=(db.content||[]).find(x=>x.id==='content-14');
-    return json(res,200,{cwd:process.cwd(),PEYZAJDER_DATA_DIR:process.env.PEYZAJDER_DATA_DIR||null,dataDir,dbFile,contentCount:(db.content||[]).length,content14Image:c14?c14.image:null});
+    const matches=(db.content||[]).filter(x=>x.id==='content-14');
+    return json(res,200,{cwd:process.cwd(),PEYZAJDER_DATA_DIR:process.env.PEYZAJDER_DATA_DIR||null,dataDir,dbFile,contentCount:(db.content||[]).length,content14Matches:matches.map(x=>({image:x.image,category:x.category,status:x.status,date:x.date||x.createdAt}))});
   }
   if(url.pathname==='/api/public/site-config'&&req.method==='GET'){
     const visible=x=>!['Pasif','Taslak','Arşiv'].includes(String(x.status||'Aktif'));
