@@ -4,7 +4,6 @@ import {extname,join,normalize,resolve} from 'node:path';
 import {randomBytes,scryptSync,timingSafeEqual} from 'node:crypto';
 
 const root=process.cwd(), dataDir=resolve(process.env.PEYZAJDER_DATA_DIR||join(root,'data')), uploadDir=resolve(process.env.PEYZAJDER_UPLOAD_DIR||join(root,'uploads')), dbFile=join(dataDir,'cms.json'), dbBackupFile=join(dataDir,'cms.backup.json');
-const __PROC_MARK=`${process.pid}-${Math.random().toString(36).slice(2)}-${Date.now()}`;
 const normalizedBase=String(process.env.PEYZAJDER_BASE_PATH||'').trim().replace(/^\/(.+)\/$/,'/$1');
 const BASE_PATH=normalizedBase==='/'?'':normalizedBase;
 const COOKIE_PATH=BASE_PATH||'/';
@@ -357,10 +356,6 @@ async function fetchCompetitions(){
 }
 async function api(req,res,url){
   if(url.pathname==='/api/health'&&req.method==='GET')return json(res,200,{ok:true,service:'peyzajder-cms',time:new Date().toISOString()});
-  if(url.pathname==='/api/public/__diag'&&req.method==='GET'){
-    const matches=(db.content||[]).filter(x=>x.id==='content-14');
-    return json(res,200,{__proc:__PROC_MARK,cwd:process.cwd(),PEYZAJDER_DATA_DIR:process.env.PEYZAJDER_DATA_DIR||null,dataDir,dbFile,contentCount:(db.content||[]).length,content14Matches:matches.map(x=>({image:x.image,category:x.category,status:x.status,date:x.date||x.createdAt}))});
-  }
   if(url.pathname==='/api/public/site-config'&&req.method==='GET'){
     const visible=x=>!['Pasif','Taslak','Arşiv'].includes(String(x.status||'Aktif'));
     const publicSetting=key=>!/(token|password|secret|webhook|api.?key|smtp)/i.test(String(key||''));
@@ -392,7 +387,6 @@ async function api(req,res,url){
     const publicSetting=key=>!/(token|password|secret|webhook|api.?key|smtp)/i.test(String(key||''));
     const settings=Object.fromEntries((db.settings||[]).filter(visible).map(x=>[String(x.key||x.title||''),String(x.value||'')]).filter(([k,v])=>k&&v&&publicSetting(k)));
     return json(res,200,{
-      __proc:__PROC_MARK,
       settings,
       sliders:sliderItems,
       haberler:content.filter(x=>x.category==='haberler').sort(byDate).slice(0,4).map(publicItem),
