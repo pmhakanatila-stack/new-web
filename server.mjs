@@ -1,5 +1,5 @@
 import {createServer} from 'node:http';
-import {readFile,writeFile,mkdir,stat,copyFile,rename} from 'node:fs/promises';
+import {readFile,writeFile,mkdir,stat,copyFile,rename,unlink} from 'node:fs/promises';
 import {extname,join,normalize,resolve} from 'node:path';
 import {randomBytes,scryptSync,timingSafeEqual} from 'node:crypto';
 import {fileURLToPath} from 'node:url';
@@ -24,6 +24,9 @@ const isBlockedStaticPath=(requestPath,resolvedFile)=>{
   return false;
 };
 const collections=['content','events','boards','members','firms','accounts','memberGroups','applications','dues','duePeriods','payments','businessLedger','decisions','subscribers','emailCampaigns','smsCampaigns','notifications','invitations','memberMessages','notificationReads','surveys','galleries','videos','articles','authors','publications','webinars','menus','sliders','promoPanels','socialLinks','sponsors','sponsorCategories','jobPosts','bankAccounts','contactMessages','supportTickets','settings','users','modules'];
+for(const name of ['home','boards','competitions','editorials','promo-panel','.htaccess']){
+  try{await unlink(join(appRoot,'api','public',name))}catch{}
+}
 await mkdir(dataDir,{recursive:true});await mkdir(uploadDir,{recursive:true});
 
 const isLegacyPeyzajderSource=value=>/^https?:\/\/(?:www\.)?peyzajder\.org(?:[/?#]|$)/i.test(String(value||'').trim());
