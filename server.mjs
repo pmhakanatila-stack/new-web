@@ -2,8 +2,9 @@ import {createServer} from 'node:http';
 import {readFile,writeFile,mkdir,stat,copyFile,rename} from 'node:fs/promises';
 import {extname,join,normalize,resolve} from 'node:path';
 import {randomBytes,scryptSync,timingSafeEqual} from 'node:crypto';
+import {fileURLToPath} from 'node:url';
 
-const root=process.cwd(), dataDir=resolve(process.env.PEYZAJDER_DATA_DIR||join(root,'data')), uploadDir=resolve(process.env.PEYZAJDER_UPLOAD_DIR||join(root,'uploads')), dbFile=join(dataDir,'cms.json'), dbBackupFile=join(dataDir,'cms.backup.json');
+const root=process.cwd(), appRoot=resolve(fileURLToPath(new URL('.',import.meta.url))), dataDir=resolve(process.env.PEYZAJDER_DATA_DIR||join(root,'data')), uploadDir=resolve(process.env.PEYZAJDER_UPLOAD_DIR||join(root,'uploads')), dbFile=join(dataDir,'cms.json'), dbBackupFile=join(dataDir,'cms.backup.json');
 const normalizedBase=String(process.env.PEYZAJDER_BASE_PATH||'').trim().replace(/^\/(.+)\/$/,'/$1');
 const BASE_PATH=normalizedBase==='/'?'':normalizedBase;
 const COOKIE_PATH=BASE_PATH||'/';
@@ -144,7 +145,7 @@ async function readJson(path){return JSON.parse((await readFile(path,'utf8')).re
 const repairKey=value=>String(value||'').trim().toLocaleLowerCase('tr-TR').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,' ').trim();
 async function applyLegacyContentRepair(value){
   let repair;
-  try{repair=await readJson(join(root,'legacy-content-repair.json'))}catch{return 0}
+  try{repair=await readJson(join(appRoot,'legacy-content-repair.json'))}catch{return 0}
   if(!repair?.version||value.legacyContentRepairVersion===repair.version)return 0;
   const listingTitles=new Set((repair.listingTitles||[]).map(repairKey));
   const removeIds=new Set((repair.removeIds||[]).map(String));
@@ -385,7 +386,7 @@ async function fetchCompetitions(){
   throw new Error('competitions-unavailable');
 }
 async function api(req,res,url){
-  if(url.pathname==='/api/health'&&req.method==='GET')return json(res,200,{ok:true,service:'peyzajder-cms',time:new Date().toISOString()});
+  if(url.pathname==='/api/health'&&req.method==='GET')return json(res,200,{ok:true,service:'peyzajder-cms',migration:db.legacyContentRepairVersion||null,time:new Date().toISOString()});
   if(url.pathname==='/api/public/site-config'&&req.method==='GET'){
     const visible=x=>!['Pasif','Taslak','Arşiv'].includes(String(x.status||'Aktif'));
     const publicSetting=key=>!/(token|password|secret|webhook|api.?key|smtp)/i.test(String(key||''));
