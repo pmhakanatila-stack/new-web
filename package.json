@@ -11,6 +11,7 @@
     "clean:legacy-links": "node scripts/clean-legacy-links.mjs",
     "migrate:legacy-news-images": "node scripts/apply-legacy-news-images.mjs seed-cms.json",
     "migrate:legacy-news-images-live": "node scripts/apply-legacy-news-images.mjs ../private_data/cms.json",
+    "diag:content-image-live": "node scripts/diag-content-image.mjs ../private_data/cms.json",
     "test:smoke": "node scripts/smoke-test.mjs",
     "test": "npm run check:syntax && npm run check:encoding && npm run check:legacy-content && npm run test:smoke"
   },
