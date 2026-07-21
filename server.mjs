@@ -2,7 +2,6 @@ import {createServer} from 'node:http';
 import {readFile,writeFile,mkdir,stat,copyFile,rename} from 'node:fs/promises';
 import {extname,join,normalize,resolve} from 'node:path';
 import {randomBytes,scryptSync,timingSafeEqual} from 'node:crypto';
-import {execFile} from 'node:child_process';
 
 const root=process.cwd(), dataDir=resolve(process.env.PEYZAJDER_DATA_DIR||join(root,'data')), uploadDir=resolve(process.env.PEYZAJDER_UPLOAD_DIR||join(root,'uploads')), dbFile=join(dataDir,'cms.json'), dbBackupFile=join(dataDir,'cms.backup.json');
 const normalizedBase=String(process.env.PEYZAJDER_BASE_PATH||'').trim().replace(/^\/(.+)\/$/,'/$1');
@@ -334,27 +333,26 @@ function publicContentItem(x,type='Gündem'){
 }
 
 let competitionsCache={data:null,ts:0};
-function fetchCompetitionsFresh(){
-  return new Promise((resolvePromise,rejectPromise)=>{
-    const inline="fetch('https://peyzajder.com/api/v1/public/competitions',{headers:{'Accept':'application/json'}}).then(r=>r.text()).then(t=>{process.stdout.write(t)}).catch(e=>{process.stderr.write(String(e&&e.message||e));process.exitCode=1})";
-    execFile(process.execPath,['-e',inline],{timeout:8000,maxBuffer:1024*1024},(err,stdout,stderr)=>{
-      if(err||!stdout)return rejectPromise(err||new Error(stderr||'empty-response'));
-      resolvePromise(stdout);
-    });
-  });
-}
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const competitionCount=d=>{const x=d&&d.data||{};return(x.active_competitions?.length||0)+(x.result_competitions?.length||0)+(x.completed_competitions?.length||0)};
 async function fetchCompetitions(){
   const now=Date.now();
   if(competitionsCache.data&&now-competitionsCache.ts<60000)return competitionsCache.data;
-  try{
-    const text=await fetchCompetitionsFresh();
-    const parsed=JSON.parse(text);
-    competitionsCache={data:parsed,ts:now};
-    return parsed;
-  }catch(e){
-    if(competitionsCache.data)return competitionsCache.data;
-    throw e;
+  let last=null;
+  for(let attempt=0;attempt<4;attempt++){
+    try{
+      const r=await fetch('https://peyzajder.com/api/v1/public/competitions',{headers:{'Accept':'application/json'}});
+      const d=await r.json();
+      if(r.ok&&d&&d.success!==false){
+        last=d;
+        if(competitionCount(d)>0){competitionsCache={data:d,ts:now};return d}
+      }
+    }catch(e){}
+    if(attempt<3)await sleep(400);
   }
+  if(last){competitionsCache={data:last,ts:now};return last}
+  if(competitionsCache.data)return competitionsCache.data;
+  throw new Error('competitions-unavailable');
 }
 async function api(req,res,url){
   if(url.pathname==='/api/health'&&req.method==='GET')return json(res,200,{ok:true,service:'peyzajder-cms',time:new Date().toISOString()});
