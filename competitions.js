@@ -3,12 +3,16 @@ const SPONSOR_API=window.peyzajderApiPath?window.peyzajderApiPath('/api/public/c
 const platform='https://peyzajder.com';
 const statusEl=document.querySelector('#competitionStatus');
 const esc=s=>String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const plain=s=>{
+  const source=String(s||'');
+  return (new DOMParser().parseFromString(source,'text/html').body.textContent||'').replace(/\s+/g,' ').trim();
+};
 const pick=(item,keys)=>keys.map(k=>item?.[k]).find(Boolean)||'';
 const asDate=v=>v?new Date(v).toLocaleDateString('tr-TR'):'Tarih duyurulacak';
 
 function normalize(item){
-  const title=pick(item,['title','name','competition_title','baslik'])||'Yarışma';
-  const summary=pick(item,['summary','description','short_description','content','aciklama'])||'Detaylar dijital yarışma platformunda yayınlanır.';
+  const title=plain(pick(item,['title','name','competition_title','baslik']))||'Yarışma';
+  const summary=plain(pick(item,['summary','description','short_description','content','aciklama']))||'Detaylar dijital yarışma platformunda yayınlanır.';
   const image=pick(item,['image','cover','cover_image','thumbnail','poster']);
   const url=pick(item,['url','link','detail_url','slug']);
   const start=pick(item,['start_date','startDate','created_at','published_at']);
