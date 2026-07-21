@@ -15,6 +15,7 @@
     "diag:content-image-datadir": "node scripts/diag-content-image.mjs data/cms.json",
     "diag:env": "node -e \"console.log('PEYZAJDER_DATA_DIR=',process.env.PEYZAJDER_DATA_DIR,'cwd=',process.cwd())\"",
     "diag:static-shadow": "node scripts/diag-static-shadow.mjs",
+    "fix:static-shadow": "node scripts/fix-static-shadow.mjs",
     "test:smoke": "node scripts/smoke-test.mjs",
     "test": "npm run check:syntax && npm run check:encoding && npm run check:legacy-content && npm run test:smoke"
   },
