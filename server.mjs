@@ -146,9 +146,15 @@ const repairKey=value=>String(value||'').trim().toLocaleLowerCase('tr-TR').norma
 async function applyLegacyContentRepair(value){
   let repair;
   try{repair=await readJson(join(appRoot,'legacy-content-repair.json'))}catch{return 0}
-  if(!repair?.version||value.legacyContentRepairVersion===repair.version)return 0;
+  if(!repair?.version)return 0;
   const listingTitles=new Set((repair.listingTitles||[]).map(repairKey));
   const removeIds=new Set((repair.removeIds||[]).map(String));
+  const hasDirtyRows=['content','events'].some(collection=>(value[collection]||[]).some(item=>listingTitles.has(repairKey(item?.title))||removeIds.has(String(item?.id||''))));
+  const hasPatchMismatch=['content','events'].some(collection=>(repair[collection]||[]).some(patch=>{
+    const target=(value[collection]||[]).find(item=>String(item?.id||'')===String(patch.id||'')&&(!patch.category||item.category===patch.category));
+    return !target||Object.entries(patch).some(([key,nextValue])=>JSON.stringify(target[key])!==JSON.stringify(nextValue));
+  }));
+  if(value.legacyContentRepairVersion===repair.version&&!hasDirtyRows&&!hasPatchMismatch)return 0;
   let changed=0;
   for(const collection of ['content','events']){
     const before=value[collection].length;
@@ -156,7 +162,7 @@ async function applyLegacyContentRepair(value){
     changed+=before-value[collection].length;
     for(const patch of repair[collection]||[]){
       const legacyKey=repairKey(patch.legacySourcePath), titleKey=repairKey(patch.title);
-      let target=value[collection].find(item=>String(item?.id||'')===String(patch.id||''))
+      let target=value[collection].find(item=>String(item?.id||'')===String(patch.id||'')&&(!patch.category||item.category===patch.category))
         ||value[collection].find(item=>legacyKey&&repairKey(item?.legacySourcePath)===legacyKey)
         ||value[collection].find(item=>titleKey&&repairKey(item?.title)===titleKey);
       if(!target){target={id:patch.id,createdAt:new Date().toISOString()};value[collection].push(target)}
@@ -386,7 +392,7 @@ async function fetchCompetitions(){
   throw new Error('competitions-unavailable');
 }
 async function api(req,res,url){
-  if(url.pathname==='/api/health'&&req.method==='GET')return json(res,200,{ok:true,service:'peyzajder-cms',migration:db.legacyContentRepairVersion||null,time:new Date().toISOString()});
+  if(url.pathname==='/api/health'&&req.method==='GET')return json(res,200,{ok:true,service:'peyzajder-cms',migration:db.legacyContentRepairVersion||null,migrationChanges:repairedLegacyContentCount,time:new Date().toISOString()});
   if(url.pathname==='/api/public/site-config'&&req.method==='GET'){
     const visible=x=>!['Pasif','Taslak','Arşiv'].includes(String(x.status||'Aktif'));
     const publicSetting=key=>!/(token|password|secret|webhook|api.?key|smtp)/i.test(String(key||''));

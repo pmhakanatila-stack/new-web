@@ -1,5 +1,5 @@
 {
-  "version": "legacy-content-clean-v3",
+  "version": "legacy-content-clean-v4",
   "listingTitles": [
     "Duyurular - PEYZAJDER",
     "Etkinlikler - PEYZAJDER",
@@ -322,7 +322,7 @@
       "legacyRepairVersion": "legacy-content-clean-v2"
     },
     {
-      "id": "content-23",
+      "id": "content-notice-grass-seminar",
       "title": "Sektörel Seminerler - \"Performans Odaklı Peyzajda Çim\" - PEYZAJDER",
       "category": "duyurular",
       "status": "Yayında",
