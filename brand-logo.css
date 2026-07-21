@@ -1,0 +1,16 @@
+/* Shared PEYZAJDER logo mark override.
+   Replaces the placeholder "P" letter icon (.brand i / .logo i / .portal-brand i)
+   with the real logo image on every page that shows the site brand mark.
+   Kept separate from logo-override.css (which also bundles homepage-only
+   overrides) so it can be safely linked from any page. */
+.brand-mark,.logo i,.portal-brand i,.brand i{display:block!important;width:176px!important;height:68px!important;flex:none!important;border-radius:0!important;background:transparent url('assets/peyzajder-logo.png') center/contain no-repeat!important;color:transparent!important;font-size:0!important}
+.brand .brand-mark+span,.logo i+span,.portal-brand i+span,.brand i+span{display:none!important}
+.site-header>.brand{min-width:360px;gap:16px}
+.site-header .brand-mark{width:180px!important;height:76px!important}
+.site-header .brand .brand-mark+span{display:block!important;max-width:175px}
+.site-header .brand strong{display:none!important}
+.site-header .brand small{display:block!important;font-family:Manrope,'DM Sans',sans-serif!important;font-size:10px!important;line-height:1.45!important;letter-spacing:.07em!important;text-transform:uppercase;color:#284b36!important;max-width:175px!important}
+.footer-brand .brand-mark{width:210px!important;height:98px!important}
+.portal-side .portal-brand i{width:185px!important;height:82px!important}
+@media(max-width:1250px){.site-header>.brand{min-width:190px}.site-header .brand .brand-mark+span{display:none!important}}
+@media(max-width:700px){.brand-mark,.logo i,.portal-brand i,.brand i{width:145px!important;height:58px!important}.site-header>.brand{min-width:0!important}.site-header .brand-mark{width:128px!important;height:58px!important}.portal-side .portal-brand i{width:150px!important;height:58px!important}}

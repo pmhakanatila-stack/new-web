@@ -2,6 +2,7 @@ import {createServer} from 'node:http';
 import {readFile,writeFile,mkdir,stat,copyFile,rename} from 'node:fs/promises';
 import {extname,join,normalize,resolve} from 'node:path';
 import {randomBytes,scryptSync,timingSafeEqual} from 'node:crypto';
+import {execFile} from 'node:child_process';
 
 const root=process.cwd(), dataDir=resolve(process.env.PEYZAJDER_DATA_DIR||join(root,'data')), uploadDir=resolve(process.env.PEYZAJDER_UPLOAD_DIR||join(root,'uploads')), dbFile=join(dataDir,'cms.json'), dbBackupFile=join(dataDir,'cms.backup.json');
 const normalizedBase=String(process.env.PEYZAJDER_BASE_PATH||'').trim().replace(/^\/(.+)\/$/,'/$1');
@@ -332,6 +333,29 @@ function publicContentItem(x,type='Gündem'){
   return{id:x.id,title:clean(x.title||x.name||''),category:x.category||'',type,summary:clean(x.summary||x.description||body.slice(0,220)),body,image:x.image||x.cover||'',images:Array.isArray(x.images)?x.images.filter(Boolean):[],date:x.date||x.createdAt||'',author:x.author||'',sourceUrl:isLegacyPeyzajderSource(x.sourceUrl)?'':x.sourceUrl||''};
 }
 
+let competitionsCache={data:null,ts:0};
+function fetchCompetitionsFresh(){
+  return new Promise((resolvePromise,rejectPromise)=>{
+    const inline="fetch('https://peyzajder.com/api/v1/public/competitions',{headers:{'Accept':'application/json'}}).then(r=>r.text()).then(t=>{process.stdout.write(t)}).catch(e=>{process.stderr.write(String(e&&e.message||e));process.exitCode=1})";
+    execFile(process.execPath,['-e',inline],{timeout:8000,maxBuffer:1024*1024},(err,stdout,stderr)=>{
+      if(err||!stdout)return rejectPromise(err||new Error(stderr||'empty-response'));
+      resolvePromise(stdout);
+    });
+  });
+}
+async function fetchCompetitions(){
+  const now=Date.now();
+  if(competitionsCache.data&&now-competitionsCache.ts<60000)return competitionsCache.data;
+  try{
+    const text=await fetchCompetitionsFresh();
+    const parsed=JSON.parse(text);
+    competitionsCache={data:parsed,ts:now};
+    return parsed;
+  }catch(e){
+    if(competitionsCache.data)return competitionsCache.data;
+    throw e;
+  }
+}
 async function api(req,res,url){
   if(url.pathname==='/api/health'&&req.method==='GET')return json(res,200,{ok:true,service:'peyzajder-cms',time:new Date().toISOString()});
   if(url.pathname==='/api/public/site-config'&&req.method==='GET'){
@@ -419,7 +443,7 @@ async function api(req,res,url){
     })));
   }
   if(url.pathname==='/api/public/editorials'&&req.method==='GET'){const safe=x=>['aktif','yayında','yayinda'].includes(String(x.status||'Yayında').toLocaleLowerCase('tr'));const byDate=(a,b)=>new Date(b.date||b.updatedAt||b.createdAt||0)-new Date(a.date||a.updatedAt||a.createdAt||0);const authors=db.authors||[];return json(res,200,(db.articles||[]).filter(safe).sort(byDate).map(x=>{const a=authors.find(y=>String(y.email||'').toLowerCase()===String(x.authorEmail||'').toLowerCase()||String(y.name||'')===String(x.author||''));return{id:x.id,title:x.title||'',summary:x.summary||String(x.body||'').replace(/<[^>]+>/g,' ').slice(0,180),body:sanitizeRichHtml(x.body||''),image:x.image||'',date:x.date||x.createdAt||'',author:x.author||a?.name||'PEYZAJDER yazarı',authorEmail:x.authorEmail||a?.email||'',authorPhoto:a?.photo||'',authorBio:a?.description||'',status:x.status||''}}))}
-  if(url.pathname==='/api/public/competitions'&&req.method==='GET'){try{const r=await fetch('https://peyzajder.com/api/v1/public/competitions',{headers:{'Accept':'application/json'}}),d=await r.json();return json(res,r.ok?200:r.status,d)}catch(e){return json(res,200,{success:false,error:'Yarışma platformuna şu anda ulaşılamadı',data:{active_competitions:[],result_competitions:[],completed_competitions:[]}})}}
+  if(url.pathname==='/api/public/competitions'&&req.method==='GET'){try{const d=await fetchCompetitions();return json(res,200,d)}catch(e){return json(res,200,{success:false,error:'Yarışma platformuna şu anda ulaşılamadı',data:{active_competitions:[],result_competitions:[],completed_competitions:[]}})}}
   if(url.pathname==='/api/public/newsletter'&&req.method==='POST'){
     const b=await body(req),email=String(b.email||'').trim().toLowerCase(),name=String(b.name||'').trim();if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return json(res,400,{error:'Geçerli bir e-posta adresi girin'});
     let item=(db.subscribers||[]).find(x=>String(x.email||'').toLowerCase()===email);if(item){item.name=name||item.name||'';item.status='Aktif';item.updatedAt=new Date().toISOString()}else{item={id:`subscribers-${Date.now()}-${randomBytes(3).toString('hex')}`,name,email,status:'Aktif',source:'Web sitesi',createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()};db.subscribers.unshift(item)}audit('E-bülten aboneliği','subscribers',item,email);await save(db);return json(res,201,{ok:true,message:'E-bülten aboneliğiniz oluşturuldu'});
