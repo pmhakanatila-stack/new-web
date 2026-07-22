@@ -57,7 +57,7 @@ function renderGroups(items){
             <small>${esc(x.role||'Kurul Üyesi')}</small>
             <h3>${esc(x.name)}</h3>
             ${x.term?`<b>${esc(x.term)}</b>`:''}
-            <p>${esc(x.bio||'PEYZAJDER kurul üyesi.')}</p>
+            ${x.bio?`<p>${esc(x.bio)}</p>`:''}
           </div>
         </article>`}).join('')}
       </div>
