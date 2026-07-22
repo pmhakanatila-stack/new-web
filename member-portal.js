@@ -86,7 +86,10 @@ function toggleOrganizationField(){
   const show=isCorporateType(select.value);
   field.hidden=!show;
   const input=field.querySelector('input');
-  if(input)input.required=show;
+  if(input){
+    input.required=show;
+    if(!show)input.value='';
+  }
 }
 
 function renderActivities(selected=[]){

@@ -54,11 +54,7 @@ document.querySelectorAll('.focus-grid article,.news-card').forEach((el,i)=>el.s
 const streamLabels={haberler:'Haber',etkinlikler:'Etkinlik',duyurular:'Duyuru'};
 const streamEsc=s=>String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function cleanText(value){
-  const source=String(value||'');
-  const plain=source.includes('<')
-    ?(new DOMParser().parseFromString(source,'text/html').body.textContent||'')
-    :source;
-  return plain
+  return String(value||'')
     .replace(/var\s+approachingEvent;/gi,'')
     .replace(/var\s+content_slider;/gi,'')
     .replace(/google-site-verification=[^\s]+/gi,'')
@@ -214,6 +210,8 @@ async function loadHomeStreams(){
   try{
     const home=await fetch(apiPath('/api/public/home')).then(r=>r.json());
     applyHomeSettings(home.settings||{});
+    const heroMemberCountEl=document.querySelector('#heroActiveMemberCount');
+    if(heroMemberCountEl&&typeof home.memberCount==='number')heroMemberCountEl.textContent=home.memberCount;
     document.querySelectorAll('[data-stream]').forEach(container=>{
       const category=container.dataset.stream;
       renderStream(container,category,home[category]||[]);
@@ -342,7 +340,7 @@ async function loadFloatingCompetitionPanel(){
     const esc=s=>String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     const title=panel.title||'Bursa Performans Odaklı Peyzaj Uygulamaları Yarışması';
     const badge=panel.label||'Yeni yarışma';
-    const body=cleanText(panel.body)||'Aktif yarışma bilgileri, başvuru koşulları ve süreç takvimi dijital yarışma platformunda.';
+    const body=panel.body||'Aktif yarışma bilgileri, başvuru koşulları ve süreç takvimi dijital yarışma platformunda.';
     const button=panel.buttonText||'TIKLA';
     const url=panel.url||'https://peyzajder.com';
     const sponsorTitle=panel.mainSponsorTitle||'Ana Sponsor';
