@@ -156,6 +156,19 @@ function renderJobs(jobs=[]){
   box.innerHTML=jobs.length?`<h4>İlan taleplerim</h4>${jobs.map(j=>`<div class="job-row"><b>${j.title}</b><span>${j.type||'İlan'} · ${j.location||''}</span><em>${j.status||'Onay bekliyor'}</em></div>`).join('')}`:'<p class="hint">Henüz ilan talebiniz yok.</p>';
 }
 
+function renderJobApplications(items=[]){
+  const box=document.querySelector('#jobApplicationsList');
+  if(!box)return;
+  if(!items.length){box.innerHTML='<h4>Gelen başvurular</h4><p class="hint">Henüz başvuru yok.</p>';return}
+  box.innerHTML=`<h4>Gelen başvurular</h4>${items.map(a=>`<div class="job-row job-application-row">
+    <div><b>${escapeHtml(a.name)}</b><span>${escapeHtml(a.jobTitle||'İlan')} · ${escapeHtml(a.email)}${a.phone?' · '+escapeHtml(a.phone):''}</span>${a.message?`<p class="job-application-message">${escapeHtml(a.message)}</p>`:''}${a.documentUrl?`<a href="${escapeHtml(a.documentUrl)}" target="_blank" rel="noopener">CV'yi görüntüle →</a>`:''}</div>
+    <select data-application-status="${a.id}">${['Yeni','İncelendi','Kabul edildi','Reddedildi'].map(s=>`<option ${s===(a.status||'Yeni')?'selected':''}>${s}</option>`).join('')}</select>
+  </div>`).join('')}`;
+  box.querySelectorAll('[data-application-status]').forEach(select=>select.addEventListener('change',async()=>{
+    try{await fetch(apiPath(`/api/member/job-applications/${select.dataset.applicationStatus}`),{method:'PUT',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify({status:select.value})})}catch{}
+  }));
+}
+
 function renderPaymentInfo(finance={},profile={}){
   const box=document.querySelector('#paymentInfo');if(!box)return;
   const bank=finance.bankAccount,balance=finance.balance||{},tariff=finance.currentTariff;
@@ -202,6 +215,10 @@ async function loadJobs(){
   try{const r=await fetch(apiPath('/api/member/jobs'),{credentials:'same-origin'});if(r.ok)renderJobs(await r.json())}catch{}
 }
 
+async function loadJobApplications(){
+  try{const r=await fetch(apiPath('/api/member/job-applications'),{credentials:'same-origin'});if(r.ok)renderJobApplications(await r.json())}catch{}
+}
+
 async function load(){
   const r=await fetch(apiPath('/api/member/me'),{credentials:'same-origin'});
   const d=await r.json();
@@ -226,6 +243,7 @@ async function load(){
   if(showCorporatePanel){
     fillCompany(d.company||{email:d.email,phone:d.phone,city:d.city,name:d.application?.organization||''});
     loadJobs();
+    loadJobApplications();
   }
   if(new URLSearchParams(location.search).get('created')){
     document.querySelector('#createdNotice').hidden=false;

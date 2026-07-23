@@ -13,7 +13,24 @@
 .job-desc{font-size:13px;line-height:1.6;color:#6b776f;margin:0}
 .job-card-foot{margin-top:auto;padding-top:14px;border-top:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
 .job-deadline{font-size:11px;color:#7a857d}
-.job-apply{display:inline-flex;background:var(--green);color:#fff;font-weight:800;font-size:12px;text-decoration:none;padding:10px 16px;white-space:nowrap}
+.job-apply{display:inline-flex;background:var(--green);color:#fff;font-weight:800;font-size:12px;text-decoration:none;padding:10px 16px;white-space:nowrap;border:0;cursor:pointer;font-family:inherit}
 .job-apply:hover{background:#0e2e1e}
 @media(max-width:900px){.jobs-grid{grid-template-columns:1fr 1fr}}
 @media(max-width:620px){.jobs-grid{grid-template-columns:1fr}}
+
+.job-apply-modal{position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;visibility:hidden;opacity:0;transition:opacity .2s ease,visibility .2s ease}
+.job-apply-modal.open{visibility:visible;opacity:1}
+.job-apply-backdrop{position:absolute;inset:0;background:rgba(15,30,20,.55)}
+.job-apply-dialog{position:relative;background:#fff;max-width:480px;width:calc(100% - 40px);max-height:85vh;overflow:auto;padding:32px;border-radius:2px;box-shadow:0 30px 70px rgba(0,0,0,.3)}
+.job-apply-close{position:absolute;top:14px;right:16px;border:0;background:transparent;font-size:26px;line-height:1;cursor:pointer;color:#6b776f}
+.job-apply-close:hover{color:var(--ink)}
+.job-apply-dialog h3{font:700 22px/1.3 "Manrope",sans-serif;margin:4px 0 18px;color:var(--ink)}
+#jobApplyForm{display:flex;flex-direction:column;gap:14px}
+#jobApplyForm label{display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:700;color:#587962}
+#jobApplyForm label .hint{font-weight:500;color:#94a099;text-transform:none;letter-spacing:0}
+#jobApplyForm input,#jobApplyForm textarea{font:500 14px/1.4 "DM Sans",sans-serif;padding:10px 12px;border:1px solid var(--line);color:var(--ink);background:#fafbf9}
+#jobApplyForm textarea{resize:vertical}
+.job-apply-submit{margin-top:4px;background:var(--green);color:#fff;font-weight:800;font-size:13px;border:0;padding:12px 18px;cursor:pointer}
+.job-apply-submit:hover{background:#0e2e1e}
+.job-apply-submit:disabled{opacity:.6;cursor:default}
+.apply-message{font-size:12px;color:#587962;min-height:16px;margin:0}

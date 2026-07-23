@@ -31,7 +31,7 @@ const isBlockedStaticPath=(requestPath,resolvedFile)=>{
   if(blockedStaticFiles.has(requestPath))return true;
   return false;
 };
-const collections=['content','events','boards','members','firms','accounts','memberGroups','applications','dues','duePeriods','payments','businessLedger','decisions','subscribers','emailCampaigns','smsCampaigns','notifications','invitations','memberMessages','notificationReads','surveys','galleries','videos','articles','authors','publications','webinars','menus','sliders','promoPanels','socialLinks','sponsors','sponsorCategories','jobPosts','bankAccounts','contactMessages','supportTickets','settings','users','modules'];
+const collections=['content','events','boards','members','firms','accounts','memberGroups','applications','dues','duePeriods','payments','businessLedger','decisions','subscribers','emailCampaigns','smsCampaigns','notifications','invitations','memberMessages','notificationReads','surveys','galleries','videos','articles','authors','publications','webinars','menus','sliders','promoPanels','socialLinks','sponsors','sponsorCategories','jobPosts','jobApplications','bankAccounts','contactMessages','supportTickets','settings','users','modules'];
 for(const name of ['home','boards','competitions','editorials','promo-panel','.htaccess']){
   try{await unlink(join(appRoot,'api','public',name))}catch{}
 }
@@ -254,7 +254,7 @@ const memberSession=req=>{const t1=cookies(req).peyzajder_member_session,t2=cook
 const secureEqual=(a,b)=>{const ah=scryptSync(a,'peyzajder-local',32),bh=scryptSync(b,'peyzajder-local',32);return timingSafeEqual(ah,bh)};
 let auditUser=USER;
 const audit=(action,collection,item,user=auditUser)=>db.activity.unshift({id:randomBytes(6).toString('hex'),action,collection,item:item?.title||item?.name||item?.email||'',at:new Date().toISOString(),user});
-const roleAccess={admin:new Set(collections),sayman:new Set(['dues','duePeriods','payments','businessLedger','bankAccounts','members','memberGroups','settings']),moderator:new Set(['content','events','publications','webinars','galleries','videos','articles','authors','sliders','jobPosts','firms','users','applications','members','invitations','memberMessages','notifications','supportTickets','surveys']),author:new Set([])};
+const roleAccess={admin:new Set(collections),sayman:new Set(['dues','duePeriods','payments','businessLedger','bankAccounts','members','memberGroups','settings']),moderator:new Set(['content','events','publications','webinars','galleries','videos','articles','authors','sliders','jobPosts','jobApplications','firms','users','applications','members','invitations','memberMessages','notifications','supportTickets','surveys']),author:new Set([])};
 const normalizedRole=r=>{const x=String(r||'').toLocaleLowerCase('tr');if(x.includes('muhasebe')||x.includes('sayman'))return'sayman';if(x.includes('köşe')||x.includes('köşe')||x.includes('kose')||x.includes('yazar'))return'author';if(x.includes('editör')||x.includes('editör')||x.includes('editor')||x.includes('moderatör')||x.includes('moderatör')||x.includes('moderator'))return'moderator';return'admin'};
 const roleLabel=r=>({admin:'Yönetici',moderator:'Moderatör',sayman:'Sayman',author:'Köşe Yazarı'}[r]||'Yönetici');
 const tempPassword=()=>`Pyz-${randomBytes(3).toString('hex')}-${randomBytes(3).toString('hex')}!`;
@@ -478,6 +478,27 @@ async function api(req,res,url){
     const items=(db.jobPosts||[]).filter(visible).map(x=>({id:x.id,title:clean(x.title||''),company:clean(x.company||''),location:clean(x.location||''),type:x.type||'',url:x.url||'',endDate:x.endDate||'',description:clean(x.description||''),createdAt:x.createdAt||''})).filter(x=>x.id&&x.title).sort((a,b)=>notExpired(b)-notExpired(a)||new Date(b.createdAt||0)-new Date(a.createdAt||0));
     return json(res,200,{items,count:items.length});
   }
+  if(url.pathname==='/api/public/job-applications'&&req.method==='POST'){
+    const b=await body(req),job=(db.jobPosts||[]).find(x=>x.id===String(b.jobId||''));
+    if(!job)return json(res,404,{error:'İlan bulunamadı'});
+    const name=String(b.name||'').trim(),email=String(b.email||'').trim().toLowerCase(),phone=String(b.phone||'').trim();
+    if(!name||!email)return json(res,400,{error:'Ad soyad ve e-posta gerekli'});
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return json(res,400,{error:'Geçerli bir e-posta adresi girin'});
+    let documentUrl='';
+    if(b.data){
+      const m=String(b.data||'').match(/^data:([^;]+);base64,(.+)$/),allowed={'application/pdf':'.pdf','image/jpeg':'.jpg','image/png':'.png'};
+      if(!m||!allowed[m[1]])return json(res,400,{error:'CV için PDF, JPG veya PNG dosyası yükleyin'});
+      const buf=Buffer.from(m[2],'base64');
+      if(buf.length>3*1024*1024)return json(res,400,{error:'Dosya 3 MB sınırını aşıyor'});
+      const filename=`job-application-${Date.now()}-${randomBytes(4).toString('hex')}${allowed[m[1]]}`;
+      await writeFile(join(uploadDir,filename),buf);
+      documentUrl=`uploads/${filename}`;
+    }
+    const item={id:`jobApplications-${Date.now()}-${randomBytes(3).toString('hex')}`,jobId:job.id,jobTitle:job.title||'',accountId:job.accountId||'',name,email,phone,message:String(b.message||'').trim().slice(0,2000),documentUrl,status:'Yeni',createdAt:new Date().toISOString()};
+    db.jobApplications=db.jobApplications||[];db.jobApplications.unshift(item);
+    audit('İş ilanına başvuru alındı','jobApplications',item);await save(db);
+    return json(res,201,{ok:true});
+  }
   if(url.pathname==='/api/public/item'&&req.method==='GET'){
     const id=String(url.searchParams.get('id')||'');
     const visible=x=>!['Pasif','Taslak','Arşiv','Arsiv'].includes(String(x.status||'Yayında'));
@@ -620,6 +641,25 @@ async function api(req,res,url){
       if(!item.title||!item.company)return json(res,400,{error:'İlan başlığı ve firma adı gerekli'});
       db.jobPosts.unshift(item);audit('Firma ilanı onaya gönderildi','jobPosts',item);await save(db);return json(res,201,item);
     }
+  }
+  if(url.pathname==='/api/member/job-applications'&&req.method==='GET'){
+    const s=memberSession(req);if(!s)return json(res,401,{error:'Üye girişi gerekli'});
+    const a=db.accounts.find(x=>x.id===s.accountId);if(!a)return json(res,401,{error:'Üye hesabı bulunamadı'});
+    const application=db.applications.find(x=>x.accountId===a.id)||null;
+    if(!membershipApproved(a,application)||!isCorporateMember(a,application))return json(res,403,{error:'Başvurular için onaylı kurumsal üyelik gereklidir'});
+    const items=(db.jobApplications||[]).filter(x=>x.accountId===a.id).map(({id,jobId,jobTitle,name,email,phone,message,documentUrl,status,createdAt})=>({id,jobId,jobTitle,name,email,phone,message,documentUrl,status,createdAt}));
+    return json(res,200,items);
+  }
+  if(url.pathname.startsWith('/api/member/job-applications/')&&req.method==='PUT'){
+    const s=memberSession(req);if(!s)return json(res,401,{error:'Üye girişi gerekli'});
+    const a=db.accounts.find(x=>x.id===s.accountId);if(!a)return json(res,401,{error:'Üye hesabı bulunamadı'});
+    const id=url.pathname.split('/').filter(Boolean).pop();
+    const item=(db.jobApplications||[]).find(x=>x.id===id&&x.accountId===a.id);
+    if(!item)return json(res,404,{error:'Başvuru bulunamadı'});
+    const b=await body(req),allowedStatus=['Yeni','İncelendi','Kabul edildi','Reddedildi'];
+    if(b.status&&allowedStatus.includes(String(b.status)))item.status=String(b.status);
+    item.updatedAt=new Date().toISOString();await save(db);
+    return json(res,200,{ok:true});
   }
   if(url.pathname==='/api/member/profile'&&req.method==='PUT'){const s=memberSession(req);if(!s)return json(res,401,{error:'Üye girişi gerekli'});const a=db.accounts.find(x=>x.id===s.accountId);if(!a)return json(res,404,{error:'Üye hesabı bulunamadı'});const app=db.applications.find(x=>x.accountId===a.id);if(!membershipApproved(a,app))return json(res,403,{error:'Kişisel bilgiler paneli üyelik onayından sonra açılır'});const b=await body(req);a.name=String(b.name||'').trim();a.phone=String(b.phone||'').trim();a.city=String(b.city||'').trim();a.profession=String(b.profession||'').trim();if(!a.name)return json(res,400,{error:'Ad soyad gerekli'});a.updatedAt=new Date().toISOString();const member=db.members.find(x=>x.accountId===a.id);if(member){member.name=a.name;member.phone=a.phone;member.city=a.city;member.profession=a.profession;member.updatedAt=a.updatedAt}if(app){app.name=a.name;app.phone=a.phone;app.city=a.city;app.profession=a.profession;app.updatedAt=a.updatedAt}await save(db);return json(res,200,{ok:true,name:a.name,phone:a.phone,city:a.city,profession:a.profession})}
   if(url.pathname==='/api/member/application'&&req.method==='POST'){const s=memberSession(req);if(!s)return json(res,401,{error:'Üye girişi gerekli'});const a=db.accounts.find(x=>x.id===s.accountId);if(db.applications.some(x=>x.accountId===a.id))return json(res,409,{error:'Başvuru belgeniz daha önce gönderildi. İkinci belge yüklenemez'});const b=await body(req),m=String(b.data||'').match(/^data:([^;]+);base64,(.+)$/),allowed={'application/pdf':'.pdf','image/jpeg':'.jpg','image/png':'.png'};if(!m||!allowed[m[1]])return json(res,400,{error:'PDF, JPG veya PNG dosyası yükleyin'});const buf=Buffer.from(m[2],'base64');if(buf.length>1024*1024)return json(res,400,{error:'Dosya 1 MB sınırını aşıyor'});const filename=`signed-application-${a.id}-${Date.now()}${allowed[m[1]]}`;await writeFile(join(uploadDir,filename),buf);const application={id:`applications-${Date.now()}-${randomBytes(3).toString('hex')}`,accountId:a.id,name:a.name,email:a.email,phone:a.phone,profession:a.profession,city:a.city,createdAt:new Date().toISOString()};db.applications.unshift(application);application.membershipType=String(b.membershipType||'Bireysel');application.organization=String(b.organization||'');application.documentUrl=`uploads/${filename}`;application.documentName=String(b.name||filename);application.status='Onay bekliyor';application.updatedAt=new Date().toISOString();a.membershipStatus='Onay bekliyor';a.membershipType=application.membershipType;if(application.organization)a.organization=application.organization;const member=db.members.find(x=>x.accountId===a.id);if(member){member.membershipType=application.membershipType;member.group=application.membershipType;member.organization=application.organization;member.membershipStatus='Onay bekliyor';member.status='Onay bekliyor';member.applicationDocument=application.documentUrl;member.updatedAt=new Date().toISOString()}audit('İmzalı başvuru yüklendi','applications',application);await save(db);return json(res,201,{ok:true,status:a.membershipStatus,documentUrl:application.documentUrl})}
