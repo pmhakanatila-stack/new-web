@@ -461,6 +461,13 @@ async function api(req,res,url){
     ].filter(x=>x.id&&x.title).sort(byDate);
     return json(res,200,{items,count:items.length,categories:[...new Set(items.map(x=>x.category).filter(Boolean))]});
   }
+  if(url.pathname==='/api/public/job-posts'&&req.method==='GET'){
+    const visible=x=>!['Pasif','Taslak','Arşiv','Arsiv'].includes(String(x.status||'Yayında'));
+    const notExpired=x=>!x.endDate||new Date(x.endDate).getTime()>=new Date().setHours(0,0,0,0);
+    const clean=v=>String(v||'').replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim();
+    const items=(db.jobPosts||[]).filter(visible).map(x=>({id:x.id,title:clean(x.title||''),company:clean(x.company||''),location:clean(x.location||''),type:x.type||'',url:x.url||'',endDate:x.endDate||'',description:clean(x.description||''),createdAt:x.createdAt||''})).filter(x=>x.id&&x.title).sort((a,b)=>notExpired(b)-notExpired(a)||new Date(b.createdAt||0)-new Date(a.createdAt||0));
+    return json(res,200,{items,count:items.length});
+  }
   if(url.pathname==='/api/public/item'&&req.method==='GET'){
     const id=String(url.searchParams.get('id')||'');
     const visible=x=>!['Pasif','Taslak','Arşiv','Arsiv'].includes(String(x.status||'Yayında'));
