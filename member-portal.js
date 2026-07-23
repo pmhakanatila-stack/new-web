@@ -317,6 +317,14 @@ document.querySelector('#supportForm')?.addEventListener('submit',async event=>{
   try{const response=await fetch(apiPath('/api/member/support'),{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify(Object.fromEntries(new FormData(event.target)))}),data=await response.json();if(!response.ok)throw new Error(data.error||'Destek talebi oluşturulamadı');event.target.reset();output.textContent='Destek talebiniz yönetime iletildi.';loadSupportTickets()}catch(error){output.textContent=error.message}
 });
 
+document.querySelector('#passwordForm').addEventListener('submit',async e=>{
+  e.preventDefault();const status=document.querySelector('#passwordMessage'),data=Object.fromEntries(new FormData(e.target));
+  if(data.newPassword!==data.newPasswordConfirm){status.textContent='Yeni şifreler birbiriyle uyuşmuyor.';return}
+  if(data.newPassword.length<8){status.textContent='Yeni şifre en az 8 karakter olmalıdır.';return}
+  status.textContent='Şifreniz güncelleniyor…';
+  try{const r=await fetch(apiPath('/api/member/password'),{method:'PUT',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify({currentPassword:data.currentPassword,newPassword:data.newPassword})});const d=await r.json();if(!r.ok)throw new Error(d.error||'Şifre güncellenemedi');e.target.reset();status.textContent='Şifreniz güncellendi.'}catch(x){status.textContent=x.message}
+});
+
 document.querySelector('#logout').onclick=async()=>{await fetch(apiPath('/api/member/logout'),{credentials:'same-origin'});location.href='member-login.html'};
 document.querySelectorAll('.portal-side nav a[href^="#"]').forEach(a=>a.onclick=()=>{document.querySelectorAll('.portal-side nav a').forEach(x=>x.classList.remove('active'));a.classList.add('active')});
 setApprovedArea(false);

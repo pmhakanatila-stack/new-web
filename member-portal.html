@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="member-portal.css?v=20260723-applications">
+  <link rel="stylesheet" href="member-portal.css?v=20260724-security">
   <link rel="stylesheet" href="brand-logo.css">
   <script src="config.js"></script>
 </head>
@@ -24,6 +24,7 @@
       <a href="#invitations" data-approved-only hidden>Davetiyelerim</a>
       <a href="#managementMessages" data-approved-only hidden>Yönetimle mesajlaşma</a>
       <a href="#support" data-approved-only hidden>Destek taleplerim</a>
+      <a href="#security">Şifremi değiştir</a>
       <a href="archive.html">İçerik merkezi</a>
       <a href="index.html#rehber" data-member-only hidden>Firma rehberi</a>
     </nav>
@@ -183,12 +184,26 @@
       <div id="jobList" class="job-list"></div>
       <div id="jobApplicationsList" class="job-list"></div>
     </section>
+    <section id="security" class="profile-card">
+      <div>
+        <span class="number">09</span>
+        <h3>Şifremi değiştir</h3>
+        <p>Sisteme giriş yaptığınız şifreyi buradan güncelleyebilirsiniz.</p>
+      </div>
+      <form id="passwordForm" class="profile-form">
+        <label>Mevcut şifre<input name="currentPassword" type="password" required autocomplete="current-password"></label>
+        <label>Yeni şifre<input name="newPassword" type="password" required minlength="8" autocomplete="new-password"></label>
+        <label>Yeni şifre (tekrar)<input name="newPasswordConfirm" type="password" required minlength="8" autocomplete="new-password"></label>
+        <button class="portal-button">Şifremi güncelle →</button>
+        <p id="passwordMessage"></p>
+      </form>
+    </section>
     <section id="currentApplication" class="current" hidden>
       <h3>Yüklenen başvuru</h3>
       <div id="applicationInfo"></div>
     </section>
   </main>
-  <script src="member-portal.js?v=20260723-applications"></script>
+  <script src="member-portal.js?v=20260724-security"></script>
   <script src="panel-notifications.js?v=20260717"></script>
 </body>
 </html>
