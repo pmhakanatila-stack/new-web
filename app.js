@@ -175,7 +175,7 @@ function renderEditorial(article){
   const box=document.querySelector('#editorialDrawer');
   if(!box||!article){if(box)box.hidden=true;return}
   box.hidden=false;
-  box.innerHTML=`<a href="archive.html" class="editorial-card">
+  box.innerHTML=`<a href="editorials.html" class="editorial-card">
     <span>Köşe yazısı</span>
     <h3>${streamEsc(article.title)}</h3>
     <p>${excerpt(article)}</p>

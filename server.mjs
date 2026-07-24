@@ -426,7 +426,8 @@ async function api(req,res,url){
     const visible=x=>!['Pasif','Taslak','Arşiv'].includes(String(x.status||'Yayında'));
     const byDate=(a,b)=>new Date(b.date||b.createdAt||0)-new Date(a.date||a.createdAt||0);
     const content=(db.content||[]).filter(visible);
-    let articles=(db.articles||[]).filter(visible).filter(x=>{
+    const publishedArticle=x=>['aktif','yayında','yayinda'].includes(String(x.status||'').toLocaleLowerCase('tr'));
+    let articles=(db.articles||[]).filter(publishedArticle).filter(x=>{
       const until=x.featuredUntil?new Date(x.featuredUntil).getTime():0;
       if(until)return until>=Date.now();
       const d=x.date||x.createdAt;
