@@ -331,12 +331,6 @@ async function loadFirmDirectory(){
 
 loadFirmDirectory();
 
-// Köşe yazıları artık ayrı "Köşe Yazıları" sayfasında yayınlanıyor; ana sayfadaki eski kayan kart kaldırıldı.
-const removeHomeEditorial=()=>document.querySelector('#editorialDrawer')?.remove();
-removeHomeEditorial();
-setTimeout(removeHomeEditorial,400);
-setTimeout(removeHomeEditorial,1200);
-
 async function loadFloatingCompetitionPanel(){
   try{
     const panel=await fetch(apiPath('/api/public/promo-panel'),{cache:'no-store'}).then(r=>r.json());
