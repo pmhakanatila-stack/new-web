@@ -1,4 +1,5 @@
 const gate=document.querySelector('#writerGate'),app=document.querySelector('#writerApp'),msg=document.querySelector('#writerMessage'),list=document.querySelector('#writerList'),form=document.querySelector('#writerForm');
+const profileForm=document.querySelector('#profileForm'),profileMsg=document.querySelector('#profileMessage'),photoPreview=document.querySelector('#profilePhotoPreview');
 let currentEdit=null,items=[];
 const esc=s=>String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 async function api(path,opt){
@@ -28,6 +29,29 @@ async function compressAndUploadImage(file){
   const uploaded=await api('/api/upload',{method:'POST',body:JSON.stringify({name:file.name.replace(/\.[^.]+$/,'.webp'),data})});
   return uploaded.url;
 }
+async function compressAndUploadSquareImage(file,maxSide){
+  if(!file)return '';
+  if(!file.type.startsWith('image/'))throw new Error('Lütfen görsel dosyası seçin');
+  const img=await new Promise((resolve,reject)=>{
+    const el=new Image(),url=URL.createObjectURL(file);
+    el.onload=()=>{URL.revokeObjectURL(url);resolve(el)};
+    el.onerror=()=>{URL.revokeObjectURL(url);reject(new Error('Görsel okunamadı'))};
+    el.src=url;
+  });
+  const side=Math.min(img.naturalWidth,img.naturalHeight),sx=(img.naturalWidth-side)/2,sy=(img.naturalHeight-side)/2,out=Math.min(maxSide,side);
+  const canvas=document.createElement('canvas');
+  canvas.width=out;canvas.height=out;
+  canvas.getContext('2d').drawImage(img,sx,sy,side,side,0,0,out,out);
+  const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/webp',0.85));
+  if(!blob)throw new Error('Görsel WebP formatına çevrilemedi');
+  const data=await new Promise(resolve=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.readAsDataURL(blob)});
+  const uploaded=await api('/api/upload',{method:'POST',body:JSON.stringify({name:file.name.replace(/\.[^.]+$/,'.webp'),data})});
+  return uploaded.url;
+}
+function showProfilePhotoPreview(url){
+  photoPreview.classList.toggle('profile-photo-empty',!url);
+  photoPreview.innerHTML=url?`<img src="${esc(url)}" alt="">`:'';
+}
 function showWriterPreview(url){
   document.querySelector('#writerImagePreview').remove();
   if(url)document.querySelector('#writerImagePath').insertAdjacentHTML('afterend',`<img id="writerImagePreview" class="writer-image-preview" src="${esc(url)}" alt="">`);
@@ -53,6 +77,11 @@ async function load(){
   try{
     const me=await api('/api/author/me');
     gate.hidden=true;app.hidden=false;document.querySelector('#writerName').textContent=`Merhaba, ${me.name}`;
+    profileForm.profession.value=me.profession||'';
+    profileForm.city.value=me.city||'';
+    profileForm.bio.value=me.bio||'';
+    profileForm.photo.value=me.photo||'';
+    showProfilePhotoPreview(me.photo||'');
     items=await api('/api/author/articles');
     draw();
   }catch{gate.hidden=false;app.hidden=true}
@@ -103,4 +132,23 @@ document.querySelector('#writerImageFile').addEventListener('change',async e=>{
   }catch(err){msg.textContent=err.message}
 });
 document.querySelector('#writerLogout').onclick=async()=>{await fetch(window.peyzajderApiPath?window.peyzajderApiPath('/api/logout'):'/api/logout');location.href='member-login.html'};
+document.querySelector('#profilePhotoFile').addEventListener('change',async e=>{
+  const file=e.target.files?.[0];if(!file)return;
+  try{
+    profileMsg.textContent='Fotoğraf hazırlanıyor…';
+    const url=await compressAndUploadSquareImage(file,480);
+    profileForm.photo.value=url;
+    showProfilePhotoPreview(url);
+    profileMsg.textContent='Fotoğraf yüklendi. Kaydetmeyi unutmayın.';
+  }catch(err){profileMsg.textContent=err.message}
+});
+profileForm.addEventListener('submit',async e=>{
+  e.preventDefault();
+  profileMsg.textContent='Profil kaydediliyor…';
+  try{
+    const payload=JSON.stringify(Object.fromEntries(new FormData(e.target)));
+    await api('/api/author/profile',{method:'PUT',body:payload});
+    profileMsg.textContent='Profiliniz kaydedildi.';
+  }catch(err){profileMsg.textContent=err.message}
+});
 load();

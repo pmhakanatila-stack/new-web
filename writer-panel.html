@@ -8,8 +8,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
-  <link rel="stylesheet" href="editorials.css?v=20260713-member-flow">
-  <link rel="stylesheet" href="rich-editor.css?v=20260715">
+  <link rel="stylesheet" href="editorials.css?v=20260724-profile">
+  <link rel="stylesheet" href="rich-editor.css?v=20260724-fix">
   <link rel="stylesheet" href="brand-logo.css">
 </head>
 <body class="writer-body">
@@ -36,11 +36,32 @@
           <p id="writerMessage"></p>
         </form>
         <section><h2>Yazılarım</h2><div id="writerList" class="writer-list"></div></section>
+        <section class="writer-profile-section">
+          <h2>Yazar profilim</h2>
+          <p class="writer-profile-hint">Köşe yazıları sayfasında adınızın yanında görünen bilgiler. Profesyonel bir görünüm için vesikalık tarzda, tek yüz gösteren bir fotoğraf önerilir.</p>
+          <form id="profileForm" class="writer-form writer-profile-form">
+            <label class="writer-photo-field">Profil fotoğrafı
+              <div class="writer-photo-row">
+                <div id="profilePhotoPreview" class="profile-photo-preview profile-photo-empty"></div>
+                <div>
+                  <input id="profilePhotoFile" type="file" accept="image/*">
+                  <input id="profilePhotoPath" name="photo" type="hidden">
+                  <small>Kare bir kırpma otomatik uygulanır; sistem WebP olarak saklar.</small>
+                </div>
+              </div>
+            </label>
+            <label>Meslek<input name="profession" placeholder="Örn. Peyzaj Mimarı"></label>
+            <label>Yaşadığı yer<input name="city" placeholder="Örn. İstanbul"></label>
+            <label>Özgeçmiş<textarea name="bio" rows="4" placeholder="Yazılarınızın altında görünecek kısa tanıtım metni"></textarea></label>
+            <button class="button" type="submit">Profili kaydet</button>
+            <p id="profileMessage"></p>
+          </form>
+        </section>
       </div>
     </section>
   </main>
-  <script src="rich-editor.js?v=20260715"></script>
-  <script src="writer-panel.js?v=20260715-rich-editor"></script>
+  <script src="rich-editor.js?v=20260724-fix"></script>
+  <script src="writer-panel.js?v=20260724-profile"></script>
   <script src="panel-notifications.js?v=20260717"></script>
 </body>
 </html>

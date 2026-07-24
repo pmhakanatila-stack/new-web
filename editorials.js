@@ -26,7 +26,7 @@ function openDetail(x){
     <p class="eyebrow">Köşe yazısı</p>
     <h1>${esc(x.title)}</h1>
     ${x.image?`<img class="editorial-detail-cover" src="${esc(x.image)}" alt="${esc(x.title)}">`:''}
-    <div class="detail-author"><div class="author-mark">${x.authorPhoto?`<img src="${esc(x.authorPhoto)}" alt="${esc(x.author)}">`:`<span>${esc(initials(x.author))}</span>`}</div><div><b>${esc(x.author)}</b><small>${esc(dateFmt(x.date))}</small><p>${esc(x.authorBio||'PEYZAJDER köşe yazarı')}</p></div></div>
+    <div class="detail-author"><div class="author-mark">${x.authorPhoto?`<img src="${esc(x.authorPhoto)}" alt="${esc(x.author)}">`:`<span>${esc(initials(x.author))}</span>`}</div><div><b>${esc(x.author)}</b>${(x.authorProfession||x.authorCity)?`<small class="detail-author-meta">${esc([x.authorProfession,x.authorCity].filter(Boolean).join(' · '))}</small>`:''}<small>${esc(dateFmt(x.date))}</small><p>${esc(x.authorBio||'PEYZAJDER köşe yazarı')}</p></div></div>
     <div class="rich-article-body">${richBody(x.body)}</div>
   </article>`;
   document.querySelector('#editorialDetail').showModal();
