@@ -104,10 +104,6 @@ function prepareStreams(){
     const p=heading.querySelector(':scope > p');
     if(p)p.remove();
   }
-  const streams=document.querySelector('.home-streams');
-  if(streams&&!document.querySelector('#editorialDrawer')){
-    streams.insertAdjacentHTML('beforeend','<aside class="editorial-drawer" id="editorialDrawer" hidden></aside>');
-  }
 }
 
 function renderStream(container,category,items){
@@ -171,16 +167,27 @@ function renderFeaturedSlider(home){
   if(slides.length>1)featuredTimer=setInterval(next,5200);
 }
 
-function renderEditorial(article){
-  const box=document.querySelector('#editorialDrawer');
-  if(!box||!article){if(box)box.hidden=true;return}
-  box.hidden=false;
-  box.innerHTML=`<a href="editorials.html" class="editorial-card">
-    <span>Köşe yazısı</span>
-    <h3>${streamEsc(article.title)}</h3>
-    <p>${excerpt(article)}</p>
-    <small>${streamEsc(article.author||'PEYZAJDER')} · Yazıyı oku →</small>
-  </a>`;
+const initials=s=>String(s||'PY').trim().split(/\s+/).map(x=>x[0]).slice(0,2).join('').toUpperCase();
+function renderHomeEditorials(articles){
+  const grid=document.querySelector('#homeEditorialsGrid');
+  const section=document.querySelector('#kose-yazilari');
+  if(!grid)return;
+  const items=(articles||[]).filter(x=>x&&x.title).slice(0,3);
+  if(!items.length){
+    if(section)section.hidden=true;
+    return;
+  }
+  if(section)section.hidden=false;
+  grid.innerHTML=items.map((x,i)=>`
+    <a href="editorials.html${x.id?`?id=${encodeURIComponent(x.id)}`:''}" class="home-editorial-card" style="--i:${i}">
+      <div class="author-mark">${x.authorPhoto?`<img src="${streamEsc(x.authorPhoto)}" alt="${streamEsc(x.author||'')}">`:`<span>${streamEsc(initials(x.author))}</span>`}</div>
+      <div>
+        <small>${streamEsc(x.author||'PEYZAJDER yazarı')}</small>
+        <h3>${streamEsc(x.title)}</h3>
+        <p>${excerpt(x)}</p>
+        <b>Yazıyı oku →</b>
+      </div>
+    </a>`).join('');
 }
 
 function applyHomeSettings(settings={}){
@@ -221,7 +228,7 @@ async function loadHomeStreams(){
       renderStream(container,category,home[category]||[]);
     });
     renderFeaturedSlider(home);
-    renderEditorial(home.articles?.[0]||home.editorial?.[0]);
+    renderHomeEditorials(home.articles?.length?home.articles:home.editorial);
   }catch{
     fetch('content-data.json').then(r=>r.json()).then(data=>{
       const fallbackHome={haberler:[],etkinlikler:[],duyurular:[]};
@@ -237,7 +244,7 @@ async function loadHomeStreams(){
         renderStream(container,category,items);
       });
       renderFeaturedSlider(fallbackHome);
-      renderEditorial(null);
+      renderHomeEditorials([]);
     }).catch(()=>{
       document.querySelectorAll('[data-stream]').forEach(x=>x.innerHTML='<p class="stream-empty">İçerikler yüklenemedi.</p>');
       renderFeaturedSlider({haberler:[],etkinlikler:[],duyurular:[]});

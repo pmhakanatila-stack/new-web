@@ -427,13 +427,11 @@ async function api(req,res,url){
     const byDate=(a,b)=>new Date(b.date||b.createdAt||0)-new Date(a.date||a.createdAt||0);
     const content=(db.content||[]).filter(visible);
     const publishedArticle=x=>['aktif','yayında','yayinda'].includes(String(x.status||'').toLocaleLowerCase('tr'));
-    let articles=(db.articles||[]).filter(publishedArticle).filter(x=>{
-      const until=x.featuredUntil?new Date(x.featuredUntil).getTime():0;
-      if(until)return until>=Date.now();
-      const d=x.date||x.createdAt;
-      return d?Date.now()-new Date(d).getTime()<=31*24*60*60*1000:false;
-    }).sort(byDate).slice(0,1).map(publicItem);
-    const editorial=articles.length?articles:content.filter(x=>x.category==='kose-yazilari'&&!String(x.title||'').toLocaleLowerCase('tr').includes('köşe yazıları -')).sort(byDate).slice(0,1).map(publicItem);
+    const authors=db.authors||[];
+    const authorFor=x=>authors.find(y=>String(y.email||'').toLowerCase()===String(x.authorEmail||'').toLowerCase()||String(y.name||'')===String(x.author||''));
+    const publicArticle=x=>{const a=authorFor(x);return{...publicItem(x),author:x.author||a?.name||'PEYZAJDER yazarı',authorPhoto:a?.photo||'',authorProfession:a?.profession||'',authorCity:a?.city||''}};
+    let articles=(db.articles||[]).filter(publishedArticle).sort(byDate).slice(0,3).map(publicArticle);
+    const editorial=articles.length?articles:content.filter(x=>x.category==='kose-yazilari'&&!String(x.title||'').toLocaleLowerCase('tr').includes('köşe yazıları -')).sort(byDate).slice(0,3).map(publicItem);
     const excludedSliderIds=new Set((db.sliders||[]).filter(x=>String(x.status||'Pasif')!=='Aktif').map(x=>String(x.sourceId||x.contentId||x.eventId||x.id)));
     const sliderPool=[
       ...content.filter(x=>x.category==='haberler').map(x=>({...publicItem(x),type:'Haber'})),

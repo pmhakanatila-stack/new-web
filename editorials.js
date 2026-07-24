@@ -31,6 +31,11 @@ function openDetail(x){
   </article>`;
   document.querySelector('#editorialDetail').showModal();
 }
-fetch((window.peyzajderApiPath?window.peyzajderApiPath('/api/public/editorials'):'/api/public/editorials')).then(r=>r.json()).then(data=>{articles=Array.isArray(data)?data:[];render()}).catch(()=>{empty.hidden=false;empty.textContent='Köşe yazıları yüklenemedi.'});
+fetch((window.peyzajderApiPath?window.peyzajderApiPath('/api/public/editorials'):'/api/public/editorials')).then(r=>r.json()).then(data=>{
+  articles=Array.isArray(data)?data:[];
+  render();
+  const wantedId=new URLSearchParams(location.search).get('id');
+  if(wantedId){const match=articles.find(x=>x.id===wantedId);if(match)openDetail(match)}
+}).catch(()=>{empty.hidden=false;empty.textContent='Köşe yazıları yüklenemedi.'});
 search.addEventListener('input',render);
 document.querySelector('#closeEditorial').onclick=()=>document.querySelector('#editorialDetail').close();
