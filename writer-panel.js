@@ -53,7 +53,7 @@ function showProfilePhotoPreview(url){
   photoPreview.innerHTML=url?`<img src="${esc(url)}" alt="">`:'';
 }
 function showWriterPreview(url){
-  document.querySelector('#writerImagePreview').remove();
+  document.querySelector('#writerImagePreview')?.remove();
   if(url)document.querySelector('#writerImagePath').insertAdjacentHTML('afterend',`<img id="writerImagePreview" class="writer-image-preview" src="${esc(url)}" alt="">`);
 }
 function resetForm(){
