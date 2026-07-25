@@ -431,7 +431,8 @@ async function api(req,res,url){
     const authorFor=x=>authors.find(y=>String(y.email||'').toLowerCase()===String(x.authorEmail||'').toLowerCase()||String(y.name||'')===String(x.author||''));
     const publicArticle=x=>{const a=authorFor(x);return{...publicItem(x),author:x.author||a?.name||'PEYZAJDER yazarı',authorPhoto:a?.photo||'',authorProfession:a?.profession||'',authorCity:a?.city||''}};
     let articles=(db.articles||[]).filter(publishedArticle).sort(byDate).slice(0,3).map(publicArticle);
-    const editorial=articles.length?articles:content.filter(x=>x.category==='kose-yazilari'&&!String(x.title||'').toLocaleLowerCase('tr').includes('köşe yazıları -')).sort(byDate).slice(0,3).map(publicItem);
+    const hasRealText=x=>(cleanText(x.summary||x.description||'').length+cleanText(x.body||'').length)>20;
+    const editorial=articles.length?articles:content.filter(x=>x.category==='kose-yazilari'&&!String(x.title||'').toLocaleLowerCase('tr').includes('köşe yazıları -')&&hasRealText(x)).sort(byDate).slice(0,3).map(publicItem);
     const excludedSliderIds=new Set((db.sliders||[]).filter(x=>String(x.status||'Pasif')!=='Aktif').map(x=>String(x.sourceId||x.contentId||x.eventId||x.id)));
     const sliderPool=[
       ...content.filter(x=>x.category==='haberler').map(x=>({...publicItem(x),type:'Haber'})),
