@@ -69,7 +69,7 @@ function cleanText(value){
     .replace(/DERNEK ve ÜYELER Hakkımızda Banka Hesap Numaralarımız/gi,'')
     .replace(/DERNEK ve ÜYELER Hakkımızda Banka Hesap Numaralarımız/gi,'')
     .replace(/DERNEK[\s\S]{0,120}Banka Hesap Numaralar[ıiı]*m[ıiı]*z/gi,'')
-    .replace(/Adres\s*:\s*Alaaddinbey Mah\.[^]+Bursa/gi,'')
+    .replace(/Adres\s*:\s*Alaaddinbey Mah\.[^]+?Bursa/gi,'')
     .replace(/E-Posta\s*:\s*bilgi@peyzajder\.org/gi,'')
     .replace(/Güncel haberler, duyurular ve ihalelerden anında haberdar ol/gi,'')
     .replace(/Bu internet sitesinde sizlere daha iyi hizmet sunulabilmesi için çerezler kullanılmaktadır\./gi,'')
