@@ -78,8 +78,8 @@ function cleanText(value){
 }
 const excerpt=(x,limit=125)=>{const text=cleanText(x.summary)||cleanText(x.body)||'PEYZAJDER gündeminden güncel içerik';return streamEsc(text.length>limit?`${text.slice(0,Math.max(0,limit-3)).trim()}...`:text)};
 const featuredFallbackImage='assets/hero-landscape-award.png';
-const featuredCategoryLinks={Haber:'news.html',Etkinlik:'events.html',Duyuru:'notices.html',Gündem:'news.html'};
-const streamFallbackLinks={haberler:'news.html',etkinlikler:'events.html',duyurular:'notices.html'};
+const featuredCategoryLinks={Haber:'haberler.html',Etkinlik:'etkinlikler.html',Duyuru:'duyurular.html',Gündem:'haberler.html'};
+const streamFallbackLinks={haberler:'haberler.html',etkinlikler:'etkinlikler.html',duyurular:'duyurular.html'};
 
 function prepareStreams(){
   const first=document.querySelector('.stream-column');
@@ -108,7 +108,7 @@ function prepareStreams(){
 
 function renderStream(container,category,items){
   container.innerHTML=items.length?items.slice(0,4).map((p,i)=>`
-    <article class="stream-item" style="--i:${i}" onclick="location.href='${streamEsc(p.url||streamFallbackLinks[category]||'archive.html')}'" role="link" tabindex="0">
+    <article class="stream-item" style="--i:${i}" onclick="location.href='${streamEsc(p.url||streamFallbackLinks[category]||'arsiv.html')}'" role="link" tabindex="0">
       <div>${p.image?`<img src="${streamEsc(p.image)}" alt="${streamEsc(p.title)}">`:'<span class="stream-placeholder"></span>'}</div>
       <div><small>${streamLabels[category]}</small><h4>${streamEsc(p.title)}</h4><p>${excerpt(p)}</p></div>
     </article>`).join(''):'<p class="stream-empty">Bu bölüm için yeni içerik hazırlanıyor.</p>';
@@ -145,7 +145,7 @@ function renderFeaturedSlider(home){
         <small>${streamEsc(item.type)} · PEYZAJDER</small>
         <h3>${streamEsc(item.title)}</h3>
         <p>${excerpt(item,230)}</p>
-        <a href="${streamEsc(item.url||featuredCategoryLinks[item.type]||'archive.html')}">İçeriğe git <span>→</span></a>
+        <a href="${streamEsc(item.url||featuredCategoryLinks[item.type]||'arsiv.html')}">İçeriğe git <span>→</span></a>
       </div>
     </article>`).join('');
   controls.innerHTML=slides.map((_,i)=>`<button type="button" class="${i===0?'is-active':''}" aria-label="${i+1}. slayta geç" data-featured-control="${i}"></button>`).join('');
@@ -179,7 +179,7 @@ function renderHomeEditorials(articles){
   }
   if(section)section.hidden=false;
   grid.innerHTML=items.map((x,i)=>`
-    <a href="editorials.html${x.id?`?id=${encodeURIComponent(x.id)}`:''}" class="home-editorial-card" style="--i:${i}">
+    <a href="kose-yazilari.html${x.id?`?id=${encodeURIComponent(x.id)}`:''}" class="home-editorial-card" style="--i:${i}">
       <div class="author-mark">${x.authorPhoto?`<img src="${streamEsc(x.authorPhoto)}" alt="${streamEsc(x.author||'')}">`:`<span>${streamEsc(initials(x.author))}</span>`}</div>
       <div>
         <small>${streamEsc(x.author||'PEYZAJDER yazarı')}</small>
@@ -264,7 +264,7 @@ async function applyMemberHeader(){
     const response=await fetch(apiPath('/api/member/me'),{credentials:'same-origin'});
     if(response.ok){
       const member=await response.json();
-      await showPanel('member-portal.html','Panelime Git');
+      await showPanel('uye-paneli.html','Panelime Git');
       return;
     }
   }catch{}
@@ -272,9 +272,9 @@ async function applyMemberHeader(){
     const response=await fetch(apiPath('/api/me'),{credentials:'same-origin'});
     if(!response.ok)return;
     const session=await response.json(),role=String(session.role||'admin').toLowerCase();
-    const destinations={sayman:'sayman.html',moderator:'moderator.html',author:'writer-panel.html',admin:'admin.html'};
+    const destinations={sayman:'sayman.html',moderator:'moderator.html',author:'yazar-paneli.html',admin:'yonetim.html'};
     const labels={sayman:'Sayman Paneli',moderator:'Moderatör Paneli',author:'Yazar Paneli',admin:'Yönetim Paneli'};
-    await showPanel(destinations[role]||'admin.html',labels[role]||'Yönetim Paneli');
+    await showPanel(destinations[role]||'yonetim.html',labels[role]||'Yönetim Paneli');
   }catch{}
 }
 

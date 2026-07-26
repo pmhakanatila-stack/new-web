@@ -23,7 +23,7 @@ function render(){
   </article>`).join('');
   document.querySelector('#empty').hidden=shown.length>0;
   grid.querySelectorAll('.archive-card').forEach(card=>{
-    const open=()=>location.href=`content-detail.html?id=${encodeURIComponent(card.dataset.id)}`;
+    const open=()=>location.href=`icerik-detay.html?id=${encodeURIComponent(card.dataset.id)}`;
     card.addEventListener('click',open);
     card.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();open();}});
   });
@@ -36,7 +36,7 @@ function renderFilters(categories){
   filters.innerHTML=ordered.map(c=>`<button class="${c===active?'active':''}" data-cat="${esc(c)}">${esc(labels[c]||c)}</button>`).join('');
   filters.querySelectorAll('button').forEach(button=>button.addEventListener('click',()=>{
     active=button.dataset.cat;
-    history.replaceState(null,'',active==='tumu'?'archive.html':`archive.html?cat=${encodeURIComponent(active)}`);
+    history.replaceState(null,'',active==='tumu'?'arsiv.html':`arsiv.html?cat=${encodeURIComponent(active)}`);
     filters.querySelector('.active')?.classList.remove('active');
     button.classList.add('active');
     render();

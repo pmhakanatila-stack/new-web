@@ -131,7 +131,7 @@ document.querySelector('#writerImageFile').addEventListener('change',async e=>{
     msg.textContent='Görsel WebP olarak yüklendi.';
   }catch(err){msg.textContent=err.message}
 });
-document.querySelector('#writerLogout').onclick=async()=>{await fetch(window.peyzajderApiPath?window.peyzajderApiPath('/api/logout'):'/api/logout');location.href='member-login.html'};
+document.querySelector('#writerLogout').onclick=async()=>{await fetch(window.peyzajderApiPath?window.peyzajderApiPath('/api/logout'):'/api/logout');location.href='uye-girisi.html'};
 document.querySelector('#profilePhotoFile').addEventListener('change',async e=>{
   const file=e.target.files?.[0];if(!file)return;
   try{

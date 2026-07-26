@@ -222,7 +222,7 @@ async function loadJobApplications(){
 async function load(){
   const r=await fetch(apiPath('/api/member/me'),{credentials:'same-origin'});
   const d=await r.json();
-  if(!r.ok)return location.href='member-login.html';
+  if(!r.ok)return location.href='uye-girisi.html';
   member=d;
   document.querySelector('#hello').textContent=`Merhaba, ${d.name||d.email}`;
   document.querySelector('#status').textContent=d.membershipStatus||'Site üyesi';
@@ -325,7 +325,7 @@ document.querySelector('#passwordForm').addEventListener('submit',async e=>{
   try{const r=await fetch(apiPath('/api/member/password'),{method:'PUT',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify({currentPassword:data.currentPassword,newPassword:data.newPassword})});const d=await r.json();if(!r.ok)throw new Error(d.error||'Şifre güncellenemedi');e.target.reset();status.textContent='Şifreniz güncellendi.'}catch(x){status.textContent=x.message}
 });
 
-document.querySelector('#logout').onclick=async()=>{await fetch(apiPath('/api/member/logout'),{credentials:'same-origin'});location.href='member-login.html'};
+document.querySelector('#logout').onclick=async()=>{await fetch(apiPath('/api/member/logout'),{credentials:'same-origin'});location.href='uye-girisi.html'};
 document.querySelectorAll('.portal-side nav a[href^="#"]').forEach(a=>a.onclick=()=>{document.querySelectorAll('.portal-side nav a').forEach(x=>x.classList.remove('active'));a.classList.add('active')});
 setApprovedArea(false);
 setCorporateArea(false);

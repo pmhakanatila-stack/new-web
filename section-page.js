@@ -12,7 +12,7 @@ document.querySelector('[data-page-title]').textContent=cfg.title;
 document.querySelector('[data-page-intro]').textContent=cfg.intro;
 document.title=`${cfg.title} — PEYZAJDER`;
 let sectionItems=[],sectionIndex=0,sectionTimer;
-const detailUrl=x=>`content-detail.html?id=${encodeURIComponent(x.id)}`;
+const detailUrl=x=>`icerik-detay.html?id=${encodeURIComponent(x.id)}`;
 const itemText=x=>sectionClean(x.summary)||sectionClean(x.body)||'PEYZAJDER gündeminden güncel içerik.';
 function renderFeature(){
   const item=sectionItems[sectionIndex];if(!item)return;
