@@ -16,7 +16,7 @@ function render(){
       <small>${esc(x.author)} · ${esc(dateFmt(x.date))}</small>
       <h2>${esc(x.title)}</h2>
       <p>${esc(x.summary||strip(x.body).slice(0,180))}</p>
-      <b>Yazıyı oku →</b>
+      <b>Makaleyi oku →</b>
     </div>
   </a>`).join('');
   grid.querySelectorAll('.editorial-card').forEach(card=>card.addEventListener('click',e=>{
@@ -27,19 +27,19 @@ function render(){
 }
 function openDetail(x){
   document.querySelector('#editorialDetailBody').innerHTML=`<article class="editorial-detail">
-    <p class="eyebrow">Köşe yazısı</p>
+    <p class="eyebrow">Makale</p>
     <h1>${esc(x.title)}</h1>
     ${x.image?`<img class="editorial-detail-cover" src="${esc(x.image)}" alt="${esc(x.title)}">`:''}
-    <div class="detail-author"><div class="author-mark">${x.authorPhoto?`<img src="${esc(x.authorPhoto)}" alt="${esc(x.author)}">`:`<span>${esc(initials(x.author))}</span>`}</div><div><b>${esc(x.author)}</b>${(x.authorProfession||x.authorCity)?`<small class="detail-author-meta">${esc([x.authorProfession,x.authorCity].filter(Boolean).join(' · '))}</small>`:''}<small>${esc(dateFmt(x.date))}</small><p>${esc(x.authorBio||'PEYZAJDER köşe yazarı')}</p></div></div>
+    <div class="detail-author"><div class="author-mark">${x.authorPhoto?`<img src="${esc(x.authorPhoto)}" alt="${esc(x.author)}">`:`<span>${esc(initials(x.author))}</span>`}</div><div><b>${esc(x.author)}</b>${(x.authorProfession||x.authorCity)?`<small class="detail-author-meta">${esc([x.authorProfession,x.authorCity].filter(Boolean).join(' · '))}</small>`:''}<small>${esc(dateFmt(x.date))}</small><p>${esc(x.authorBio||'PEYZAJDER üyesi')}</p></div></div>
     <div class="rich-article-body">${richBody(x.body)}</div>
   </article>`;
   document.querySelector('#editorialDetail').showModal();
 }
-fetch((window.peyzajderApiPath?window.peyzajderApiPath('/api/public/editorials'):'/api/public/editorials')).then(r=>r.json()).then(data=>{
+fetch((window.peyzajderApiPath?window.peyzajderApiPath('/api/public/articles'):'/api/public/articles')).then(r=>r.json()).then(data=>{
   articles=Array.isArray(data)?data:[];
   render();
   const wantedId=new URLSearchParams(location.search).get('id');
   if(wantedId){const match=articles.find(x=>x.id===wantedId);if(match)openDetail(match)}
-}).catch(()=>{empty.hidden=false;empty.textContent='Köşe yazıları yüklenemedi.'});
+}).catch(()=>{empty.hidden=false;empty.textContent='Makaleler yüklenemedi.'});
 search.addEventListener('input',render);
 document.querySelector('#closeEditorial').onclick=()=>document.querySelector('#editorialDetail').close();

@@ -9,7 +9,9 @@
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="member-portal.css?v=20260724-security">
   <link rel="stylesheet" href="brand-logo.css">
+  <link rel="stylesheet" href="rich-editor.css?v=20260724-fix">
   <script src="config.js"></script>
+  <meta name="robots" content="noindex,nofollow">
 </head>
 <body>
   <aside class="portal-side">
@@ -20,6 +22,7 @@
       <a href="#payment" data-approved-only hidden>Ödeme bilgileri</a>
       <a href="#company" data-corporate-only hidden>Firma paneli</a>
       <a href="#companyJobs" data-corporate-only hidden>İlan taleplerim</a>
+      <a href="#articles" data-approved-only hidden>Makalelerim</a>
       <a href="#notifications" data-approved-only hidden>Bildirimlerim</a>
       <a href="#invitations" data-approved-only hidden>Davetiyelerim</a>
       <a href="#managementMessages" data-approved-only hidden>Yönetimle mesajlaşma</a>
@@ -102,6 +105,26 @@
         <button class="portal-button">Dekontu saymana gönder →</button>
         <p id="paymentMessage"></p>
       </form>
+    </section>
+    <section id="articles" class="profile-card" data-approved-only hidden>
+      <div>
+        <span class="number">10</span>
+        <h3>Makalelerim</h3>
+        <p>Peyzaj mimarlığı ve sektörle ilgili makalenizi buradan gönderin. Gönderdiğiniz makale moderatör veya admin onayından sonra Makaleler sayfasında yayınlanır.</p>
+      </div>
+      <form id="articleForm" class="profile-form article-form">
+        <label class="wide">Başlık<input name="title" required></label>
+        <label class="wide article-image-field">Makale görseli
+          <input id="articleImageFile" type="file" accept="image/*">
+          <input id="articleImagePath" name="image" type="text" placeholder="Görsel seçildiğinde WebP olarak yüklenecek" readonly>
+          <small>JPG/PNG/WebP seçebilirsiniz; sistem WebP olarak saklar. Görsel isteğe bağlıdır.</small>
+        </label>
+        <label class="wide">Kısa özet<textarea name="summary" rows="2"></textarea></label>
+        <label class="wide">Makale metni<textarea name="body" rows="12" data-rich-editor></textarea></label>
+        <button class="portal-button" type="submit">Onaya gönder →</button>
+        <p id="articleMessage"></p>
+      </form>
+      <div id="articleList" class="job-list"></div>
     </section>
     <section id="memberDirectory" class="profile-card" data-member-only hidden>
       <div>
@@ -203,7 +226,8 @@
       <div id="applicationInfo"></div>
     </section>
   </main>
-  <script src="member-portal.js?v=20260724-security"></script>
+  <script src="rich-editor.js?v=20260724-fix"></script>
+  <script src="member-portal.js?v=20260726-articles"></script>
   <script src="panel-notifications.js?v=20260717"></script>
 </body>
 </html>

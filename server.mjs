@@ -246,7 +246,8 @@ if(enrichedYapiderPresentationCount)await save(db);
 const json=(res,status,data,headers={})=>{res.writeHead(status,{'Content-Type':'application/json; charset=utf-8',...SECURITY_HEADERS,...headers});res.end(JSON.stringify(data))};
 const withBase=p=>`${BASE_PATH}${p.startsWith('/')?p:`/${p}`}`;
 const legacySlugRedirects={'/about.html':'/hakkimizda.html','/admin.html':'/yonetim.html','/archive.html':'/arsiv.html','/boards.html':'/kurullar.html','/competitions.html':'/yarismalar.html','/contact.html':'/iletisim.html','/content-detail.html':'/icerik-detay.html','/editorials.html':'/kose-yazilari.html','/events.html':'/etkinlikler.html','/forgot-password.html':'/sifremi-unuttum.html','/jobs.html':'/is-ilanlari.html','/member-login.html':'/uye-girisi.html','/member-portal.html':'/uye-paneli.html','/membership.html':'/uyelik.html','/news.html':'/haberler.html','/notices.html':'/duyurular.html','/reset-password.html':'/sifre-sifirla.html','/writer-panel.html':'/yazar-paneli.html'};
-const body=async req=>{const parts=[];for await(const c of req)parts.push(c);if(!parts.length)return{};const data=JSON.parse(Buffer.concat(parts).toString('utf8')),pathname=new URL(req.url||'/',`http://${req.headers.host||'localhost'}`).pathname,collection=pathname.startsWith('/api/author/articles')?'articles':pathname.split('/').filter(Boolean)[1]||'';return sanitizeRichRecord(collection,data)};
+const body=async req=>{const parts=[];for await(const c of req)parts.push(c);if(!parts.length)return{};const data=JSON.parse(Buffer.concat(parts).toString('utf8')),pathname=new URL(req.url||'/',`http://${req.headers.host||'localhost'}`).pathname,collection=(pathname.startsWith('/api/author/articles')||pathname.startsWith('/api/member/articles'))?'articles':pathname.split('/').filter(Boolean)[1]||'';return sanitizeRichRecord(collection,data)};
+function escHtml(value){return String(value??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
 const cookies=req=>Object.fromEntries((req.headers.cookie||'').split(';').map(x=>x.trim().split('=').map(decodeURIComponent)).filter(x=>x.length===2));
 const session=req=>sessions.get(cookies(req).peyzajder_session);
 const validSession=(token,s)=>{if(!s)return null;if(Date.now()-(s.created||0)>SESSION_MAX_AGE_MS){sessions.delete(token);return null}return s};
@@ -387,6 +388,25 @@ function publicContentItem(x,type='Gündem'){
   const body=sanitizeRichHtml(x.body||x.description||'');
   return{id:x.id,title:clean(x.title||x.name||''),category:x.category||'',type,summary:clean(x.summary||x.description||body.slice(0,220)),body,image:x.image||x.cover||'',images:Array.isArray(x.images)?x.images.filter(Boolean):[],date:x.date||x.createdAt||'',author:x.author||'',sourceUrl:isLegacyPeyzajderSource(x.sourceUrl)?'':x.sourceUrl||''};
 }
+function publicItemSources(){
+  return [
+    ...(db.content||[]).filter(x=>x.category!=='etkinlikler').map(x=>({...x,type:x.category==='duyurular'?'Duyuru':'Haber'})),
+    ...(db.events||[]).map(x=>({...x,type:'Etkinlik'})),
+    ...(db.jobPosts||[]).map(x=>({...x,type:'İlan'})),
+    ...(db.articles||[]).map(x=>({...x,type:x.kind==='makale'?'Makale':'Köşe Yazısı'}))
+  ];
+}
+const publicItemVisible=x=>!['Pasif','Taslak','Arşiv','Arsiv'].includes(String(x.status||'Yayında'));
+function findPublicItemById(id){
+  return publicItemSources().find(x=>String(x.id)===String(id)&&publicItemVisible(x));
+}
+function mapPublicArticle(x){
+  const authors=db.authors||[];
+  const a=authors.find(y=>String(y.email||'').toLowerCase()===String(x.authorEmail||'').toLowerCase()||String(y.name||'')===String(x.author||''));
+  return{id:x.id,title:x.title||'',summary:x.summary||String(x.body||'').replace(/<[^>]+>/g,' ').slice(0,180),body:sanitizeRichHtml(x.body||''),image:x.image||'',date:x.date||x.createdAt||'',author:x.author||a?.name||'PEYZAJDER yazarı',authorEmail:x.authorEmail||a?.email||'',authorPhoto:a?.photo||'',authorBio:a?.description||'',authorProfession:a?.profession||'',authorCity:a?.city||'',status:x.status||''};
+}
+const articleSafe=x=>['aktif','yayında','yayinda'].includes(String(x.status||'Yayında').toLocaleLowerCase('tr'));
+const articleByDate=(a,b)=>new Date(b.date||b.updatedAt||b.createdAt||0)-new Date(a.date||a.updatedAt||a.createdAt||0);
 
 let competitionsCache={data:null,ts:0};
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
@@ -502,14 +522,7 @@ async function api(req,res,url){
   }
   if(url.pathname==='/api/public/item'&&req.method==='GET'){
     const id=String(url.searchParams.get('id')||'');
-    const visible=x=>!['Pasif','Taslak','Arşiv','Arsiv'].includes(String(x.status||'Yayında'));
-    const sources=[
-      ...(db.content||[]).filter(x=>x.category!=='etkinlikler').map(x=>({...x,type:x.category==='duyurular'?'Duyuru':'Haber'})),
-      ...(db.events||[]).map(x=>({...x,type:'Etkinlik'})),
-      ...(db.jobPosts||[]).map(x=>({...x,type:'İlan'})),
-      ...(db.articles||[]).map(x=>({...x,type:'Köşe Yazısı'}))
-    ];
-    const item=sources.find(x=>String(x.id)===id&&visible(x));
+    const item=findPublicItemById(id);
     if(!item)return json(res,404,{error:'İçerik bulunamadı'});
     return json(res,200,publicContentItem(item,item.type));
   }
@@ -526,7 +539,8 @@ async function api(req,res,url){
       id:x.id,name:x.name||'',logo:x.logo||x.image||'',city:x.city||'',address:x.address||'',phone:x.phone||'',email:x.email||'',website:x.website||'',activities:Array.isArray(x.activities)?x.activities:String(x.activities||x.specialty||'').split(/[,;\n]/).map(y=>y.trim()).filter(Boolean),description:x.description||''
     })));
   }
-  if(url.pathname==='/api/public/editorials'&&req.method==='GET'){const safe=x=>['aktif','yayında','yayinda'].includes(String(x.status||'Yayında').toLocaleLowerCase('tr'));const byDate=(a,b)=>new Date(b.date||b.updatedAt||b.createdAt||0)-new Date(a.date||a.updatedAt||a.createdAt||0);const authors=db.authors||[];return json(res,200,(db.articles||[]).filter(safe).sort(byDate).map(x=>{const a=authors.find(y=>String(y.email||'').toLowerCase()===String(x.authorEmail||'').toLowerCase()||String(y.name||'')===String(x.author||''));return{id:x.id,title:x.title||'',summary:x.summary||String(x.body||'').replace(/<[^>]+>/g,' ').slice(0,180),body:sanitizeRichHtml(x.body||''),image:x.image||'',date:x.date||x.createdAt||'',author:x.author||a?.name||'PEYZAJDER yazarı',authorEmail:x.authorEmail||a?.email||'',authorPhoto:a?.photo||'',authorBio:a?.description||'',authorProfession:a?.profession||'',authorCity:a?.city||'',status:x.status||''}}))}
+  if(url.pathname==='/api/public/editorials'&&req.method==='GET')return json(res,200,(db.articles||[]).filter(x=>articleSafe(x)&&x.kind!=='makale').sort(articleByDate).map(mapPublicArticle));
+  if(url.pathname==='/api/public/articles'&&req.method==='GET')return json(res,200,(db.articles||[]).filter(x=>articleSafe(x)&&x.kind==='makale').sort(articleByDate).map(mapPublicArticle));
   if(url.pathname==='/api/public/competitions'&&req.method==='GET'){try{const d=await fetchCompetitions();return json(res,200,d)}catch(e){return json(res,200,{success:false,error:'Yarışma platformuna şu anda ulaşılamadı',data:{active_competitions:[],result_competitions:[],completed_competitions:[]}})}}
   if(url.pathname==='/api/public/newsletter'&&req.method==='POST'){
     const b=await body(req),email=String(b.email||'').trim().toLowerCase(),name=String(b.name||'').trim();if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return json(res,400,{error:'Geçerli bir e-posta adresi girin'});
@@ -662,6 +676,35 @@ async function api(req,res,url){
     item.updatedAt=new Date().toISOString();await save(db);
     return json(res,200,{ok:true});
   }
+  if(url.pathname.startsWith('/api/member/articles')){
+    const s=memberSession(req);if(!s)return json(res,401,{error:'Üye girişi gerekli'});
+    const acc=db.accounts.find(x=>x.id===s.accountId);if(!acc)return json(res,401,{error:'Üye hesabı bulunamadı'});
+    const app=db.applications.find(x=>x.accountId===acc.id);
+    if(!membershipApproved(acc,app))return json(res,403,{error:'Makale gönderimi üyelik onayından sonra açılır'});
+    const email=String(acc.email||'').toLowerCase(),name=acc.name||email;
+    const parts=url.pathname.split('/').filter(Boolean),id=parts[3];
+    const mine=x=>x.kind==='makale'&&String(x.authorEmail||'').toLowerCase()===email;
+    if(req.method==='GET')return json(res,200,(db.articles||[]).filter(mine));
+    if(req.method==='POST'&&!id){
+      const b=await body(req);
+      const item={id:`articles-${Date.now()}-${randomBytes(3).toString('hex')}`,kind:'makale',title:String(b.title||'').trim(),summary:String(b.summary||'').trim(),body:String(b.body||'').trim(),image:String(b.image||'').trim(),author:name,authorEmail:email,date:new Date().toISOString().slice(0,10),status:'Beklemede',createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()};
+      if(!item.title||!item.body)return json(res,400,{error:'Başlık ve makale metni gerekli'});
+      db.articles.unshift(item);
+      if(!db.authors.some(x=>String(x.email||'').toLowerCase()===email))db.authors.unshift({id:`authors-${Date.now()}-${randomBytes(3).toString('hex')}`,name,email,profession:acc.profession||'',city:acc.city||'',status:'Aktif',createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()});
+      audit('Üye makale gönderdi','articles',item);await save(db);return json(res,201,item);
+    }
+    const index=(db.articles||[]).findIndex(x=>x.id===id);
+    if(index<0||!mine(db.articles[index]))return json(res,404,{error:'Makale bulunamadı'});
+    if(req.method==='PUT'){
+      const b=await body(req),item=db.articles[index];
+      item.title=String(b.title||'').trim();item.summary=String(b.summary||'').trim();item.body=String(b.body||'').trim();item.image=String(b.image||'').trim();
+      if(!item.title||!item.body)return json(res,400,{error:'Başlık ve makale metni gerekli'});
+      item.status='Beklemede';item.updatedAt=new Date().toISOString();
+      audit('Üye makalesini güncelledi','articles',item);await save(db);return json(res,200,item);
+    }
+    if(req.method==='DELETE'){const [removed]=db.articles.splice(index,1);audit('Üye makalesini sildi','articles',removed);await save(db);return json(res,200,{ok:true})}
+    return json(res,405,{error:'Yöntem desteklenmiyor'});
+  }
   if(url.pathname==='/api/member/password'&&req.method==='PUT'){
     const s=memberSession(req);if(!s)return json(res,401,{error:'Üye girişi gerekli'});
     const a=db.accounts.find(x=>x.id===s.accountId);if(!a)return json(res,404,{error:'Üye hesabı bulunamadı'});
@@ -721,7 +764,33 @@ async function api(req,res,url){
   return json(res,405,{error:'Yöntem desteklenmiyor'});
 }
 
-const httpServer=createServer(async(req,res)=>{try{const url=new URL(req.url||'/',`http://${req.headers.host||'localhost'}`);if(BASE_PATH&&(url.pathname===BASE_PATH||url.pathname.startsWith(`${BASE_PATH}/`)))url.pathname=url.pathname.slice(BASE_PATH.length)||'/';if(url.pathname.startsWith('/api/'))return await api(req,res,url);let path=decodeURIComponent(url.pathname);if(path==='/')path='/index.html';if(legacySlugRedirects[path]){res.writeHead(301,{Location:withBase(legacySlugRedirects[path])+(url.search||''),...SECURITY_HEADERS});return res.end()}const file=normalize(join(root,path));if(!file.startsWith(root))throw new Error();if(isBlockedStaticPath(path,file))throw new Error();const info=await stat(file);if(!info.isFile())throw new Error();const ext=extname(file);res.writeHead(200,{'Content-Type':types[ext]||'application/octet-stream','Cache-Control':'no-store',...SECURITY_HEADERS});const raw=await readFile(file);if(ext==='.html'){const boot=`<script>window.PEYZAJDER_BASE_PATH=${JSON.stringify(BASE_PATH)};window.PEYZAJDER_API_BASE=${JSON.stringify(withBase('/api'))};window.peyzajderApiPath=function(path){return window.PEYZAJDER_API_BASE+String(path||'').replace(/^\\/api/,'');};</script><link rel="stylesheet" href="${withBase('/logo-override.css')}">`;const html=raw.toString('utf8').replace('</head>',`${boot}</head>`);return res.end(html)}res.end(raw)}catch(e){console.error('PEYZAJDER_LOCAL_SERVER_ERROR',req.method,req.url,e);res.writeHead(404,{'Content-Type':'text/plain; charset=utf-8'});res.end('Sayfa bulunamadı')}}).listen(PORT,HOST,()=>console.log(`PEYZAJDER CMS: http://${HOST}:${PORT}${BASE_PATH||''}`));
+const SITE_ORIGIN='https://peyzajder.org';
+const sitemapStaticPages=['index.html','hakkimizda.html','kurullar.html','yarismalar.html','haberler.html','etkinlikler.html','duyurular.html','kose-yazilari.html','makaleler.html','arsiv.html','uyelik.html','is-ilanlari.html','iletisim.html'];
+function buildRobotsTxt(){
+  return `User-agent: *\nAllow: /\nDisallow: /api/\nDisallow: /uye-paneli.html\nDisallow: /yazar-paneli.html\nDisallow: /yonetim.html\nDisallow: /moderator.html\nDisallow: /sayman.html\nDisallow: /uploads/\nSitemap: ${SITE_ORIGIN}${withBase('/sitemap.xml')}\n`;
+}
+function buildSitemapXml(){
+  const items=publicItemSources().filter(publicItemVisible);
+  const urls=[
+    ...sitemapStaticPages.map(p=>({loc:`${SITE_ORIGIN}/${p}`,lastmod:''})),
+    ...items.map(x=>({loc:`${SITE_ORIGIN}/icerik-detay.html?id=${encodeURIComponent(x.id)}`,lastmod:String(x.updatedAt||x.date||x.createdAt||'').slice(0,10)}))
+  ];
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.map(u=>`<url><loc>${escHtml(u.loc)}</loc>${u.lastmod?`<lastmod>${u.lastmod}</lastmod>`:''}</url>`).join('\n')}\n</urlset>`;
+}
+function buildDetailHead(itemId){
+  const item=itemId?findPublicItemById(itemId):null;
+  if(!item)return null;
+  const pub=publicContentItem(item,item.type);
+  const title=escHtml(`${pub.title||pub.type} — PEYZAJDER`);
+  const description=escHtml(String(pub.summary||pub.title||'').slice(0,300));
+  const rawImage=pub.image||'';
+  const image=rawImage?(/^https?:\/\//i.test(rawImage)?rawImage:`${SITE_ORIGIN}/${rawImage.replace(/^\//,'')}`):`${SITE_ORIGIN}/assets/peyzajder-logo.png`;
+  const canonical=`${SITE_ORIGIN}/icerik-detay.html?id=${encodeURIComponent(pub.id)}`;
+  const ld=JSON.stringify({'@context':'https://schema.org','@type':'Article',headline:pub.title||'',description:pub.summary||'',image,datePublished:pub.date||undefined,author:{'@type':'Person',name:pub.author||'PEYZAJDER'},publisher:{'@type':'Organization',name:'PEYZAJDER',logo:{'@type':'ImageObject',url:`${SITE_ORIGIN}/assets/peyzajder-logo.png`}}});
+  const metaHead=`<meta name="description" content="${description}"><link rel="canonical" href="${escHtml(canonical)}"><meta property="og:type" content="article"><meta property="og:title" content="${title}"><meta property="og:description" content="${description}"><meta property="og:image" content="${escHtml(image)}"><meta property="og:url" content="${escHtml(canonical)}"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${title}"><meta name="twitter:description" content="${description}"><meta name="twitter:image" content="${escHtml(image)}"><script type="application/ld+json">${ld}</script>`;
+  return{title,metaHead};
+}
+const httpServer=createServer(async(req,res)=>{try{const url=new URL(req.url||'/',`http://${req.headers.host||'localhost'}`);if(BASE_PATH&&(url.pathname===BASE_PATH||url.pathname.startsWith(`${BASE_PATH}/`)))url.pathname=url.pathname.slice(BASE_PATH.length)||'/';if(url.pathname.startsWith('/api/'))return await api(req,res,url);if(url.pathname==='/robots.txt'){res.writeHead(200,{'Content-Type':'text/plain; charset=utf-8','Cache-Control':'no-store',...SECURITY_HEADERS});return res.end(buildRobotsTxt())}if(url.pathname==='/sitemap.xml'){res.writeHead(200,{'Content-Type':'application/xml; charset=utf-8','Cache-Control':'no-store',...SECURITY_HEADERS});return res.end(buildSitemapXml())}let path=decodeURIComponent(url.pathname);if(path==='/')path='/index.html';if(legacySlugRedirects[path]){res.writeHead(301,{Location:withBase(legacySlugRedirects[path])+(url.search||''),...SECURITY_HEADERS});return res.end()}const file=normalize(join(root,path));if(!file.startsWith(root))throw new Error();if(isBlockedStaticPath(path,file))throw new Error();const info=await stat(file);if(!info.isFile())throw new Error();const ext=extname(file);res.writeHead(200,{'Content-Type':types[ext]||'application/octet-stream','Cache-Control':'no-store',...SECURITY_HEADERS});const raw=await readFile(file);if(ext==='.html'){let html=raw.toString('utf8');if(path==='/icerik-detay.html'){const detail=buildDetailHead(url.searchParams.get('id')||'');if(detail){html=html.replace(/<title>[^<]*<\/title>/,`<title>${detail.title}</title>`);html=html.replace('</head>',`${detail.metaHead}</head>`)}}const boot=`<script>window.PEYZAJDER_BASE_PATH=${JSON.stringify(BASE_PATH)};window.PEYZAJDER_API_BASE=${JSON.stringify(withBase('/api'))};window.peyzajderApiPath=function(path){return window.PEYZAJDER_API_BASE+String(path||'').replace(/^\\/api/,'');};</script><link rel="stylesheet" href="${withBase('/logo-override.css')}">`;html=html.replace('</head>',`${boot}</head>`);return res.end(html)}res.end(raw)}catch(e){console.error('PEYZAJDER_LOCAL_SERVER_ERROR',req.method,req.url,e);res.writeHead(404,{'Content-Type':'text/plain; charset=utf-8'});res.end('Sayfa bulunamadı')}}).listen(PORT,HOST,()=>console.log(`PEYZAJDER CMS: http://${HOST}:${PORT}${BASE_PATH||''}`));
 
 
 for(const signal of ['SIGINT','SIGTERM'])process.on(signal,()=>httpServer.close(()=>process.exit(0)));

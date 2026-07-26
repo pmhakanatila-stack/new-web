@@ -3,10 +3,11 @@ const profileMessage=document.querySelector('#profileMessage');
 const companyMessage=document.querySelector('#companyMessage');
 const jobMessage=document.querySelector('#jobMessage');
 const paymentMessage=document.querySelector('#paymentMessage');
+const articleMessage=document.querySelector('#articleMessage');
 const file=document.querySelector('#document');
 const logoInput=document.querySelector('#companyLogo');
 const apiPath=path=>window.peyzajderApiPath?window.peyzajderApiPath(path):path;
-let member,companyLogoData='',memberTypes=[];
+let member,companyLogoData='',memberTypes=[],articleItems=[],currentEditArticle=null;
 const MAX_APPLICATION_SIZE=1024*1024;
 
 const money=n=>(Number(n)||0).toLocaleString('tr-TR',{minimumFractionDigits:2,maximumFractionDigits:2})+' ₺';
@@ -169,6 +170,73 @@ function renderJobApplications(items=[]){
   }));
 }
 
+function showArticleImagePreview(url){
+  document.querySelector('#articleImagePreview')?.remove();
+  if(url)document.querySelector('#articleImagePath').insertAdjacentHTML('afterend',`<img id="articleImagePreview" class="writer-image-preview" src="${escapeHtml(url)}" alt="">`);
+}
+function resetArticleForm(){
+  currentEditArticle=null;
+  const form=document.querySelector('#articleForm');
+  form.reset();
+  window.PeyzajRichEditor?.setValue(form.body,'');
+  showArticleImagePreview('');
+  form.querySelector('button[type=submit]').textContent='Onaya gönder →';
+  articleMessage.textContent='';
+}
+function renderArticles(items=[]){
+  const box=document.querySelector('#articleList');if(!box)return;
+  box.innerHTML=items.length?`<h4>Makalelerim</h4>${items.map(x=>`<div class="job-row"><b>${escapeHtml(x.title)}</b><span>${new Date(x.updatedAt||x.createdAt||Date.now()).toLocaleDateString('tr-TR')}</span><em>${escapeHtml(x.status||'Beklemede')}</em><div class="writer-actions"><button type="button" data-edit-article="${escapeHtml(x.id)}">Düzenle</button><button type="button" data-delete-article="${escapeHtml(x.id)}">Sil</button></div></div>`).join('')}`:'<p class="hint">Henüz makale göndermediniz.</p>';
+  box.querySelectorAll('[data-edit-article]').forEach(btn=>btn.onclick=()=>editArticle(btn.dataset.editArticle));
+  box.querySelectorAll('[data-delete-article]').forEach(btn=>btn.onclick=()=>deleteArticle(btn.dataset.deleteArticle));
+}
+function editArticle(id){
+  const item=articleItems.find(x=>x.id===id);if(!item)return;
+  currentEditArticle=id;
+  const form=document.querySelector('#articleForm');
+  form.title.value=item.title||'';
+  if(form.image)form.image.value=item.image||'';
+  form.summary.value=item.summary||'';
+  window.PeyzajRichEditor?.setValue(form.body,item.body||'');
+  showArticleImagePreview(item.image||'');
+  form.querySelector('button[type=submit]').textContent='Güncelle ve tekrar onaya gönder →';
+  articleMessage.textContent='Makalenizi düzenliyorsunuz. Kaydedince durum tekrar Beklemede olur.';
+  form.scrollIntoView({behavior:'smooth',block:'start'});
+}
+async function deleteArticle(id){
+  const item=articleItems.find(x=>x.id===id);
+  if(!item||!confirm(`"${item.title}" makalesini silmek istiyor musunuz`))return;
+  try{
+    const r=await fetch(apiPath(`/api/member/articles/${id}`),{method:'DELETE',credentials:'same-origin'});
+    if(!r.ok)throw new Error('Makale silinemedi');
+    articleMessage.textContent='Makale silindi.';
+    if(currentEditArticle===id)resetArticleForm();
+    await loadArticles();
+  }catch(err){articleMessage.textContent=err.message}
+}
+async function loadArticles(){
+  try{const r=await fetch(apiPath('/api/member/articles'),{credentials:'same-origin'});if(r.ok){articleItems=await r.json();renderArticles(articleItems)}}catch{}
+}
+async function compressAndUploadArticleImage(fileInput){
+  const selected=fileInput.files?.[0];if(!selected)return '';
+  if(!selected.type.startsWith('image/'))throw new Error('Lütfen görsel dosyası seçin');
+  const img=await new Promise((resolve,reject)=>{
+    const el=new Image(),url=URL.createObjectURL(selected);
+    el.onload=()=>{URL.revokeObjectURL(url);resolve(el)};
+    el.onerror=()=>{URL.revokeObjectURL(url);reject(new Error('Görsel okunamadı'))};
+    el.src=url;
+  });
+  const maxSide=1800,ratio=Math.min(1,maxSide/Math.max(img.naturalWidth,img.naturalHeight));
+  const canvas=document.createElement('canvas');
+  canvas.width=Math.max(1,Math.round(img.naturalWidth*ratio));
+  canvas.height=Math.max(1,Math.round(img.naturalHeight*ratio));
+  canvas.getContext('2d').drawImage(img,0,0,canvas.width,canvas.height);
+  const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/webp',0.82));
+  if(!blob)throw new Error('Görsel WebP formatına çevrilemedi');
+  const data=await new Promise(resolve=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.readAsDataURL(blob)});
+  const r=await fetch(apiPath('/api/upload'),{method:'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify({name:selected.name.replace(/\.[^.]+$/,'.webp'),data})});
+  const d=await r.json();if(!r.ok)throw new Error(d.error||'Görsel yüklenemedi');
+  return d.url;
+}
 function renderPaymentInfo(finance={},profile={}){
   const box=document.querySelector('#paymentInfo');if(!box)return;
   const bank=finance.bankAccount,balance=finance.balance||{},tariff=finance.currentTariff;
@@ -236,7 +304,7 @@ async function load(){
   renderNotifications(d.notifications||[]);
   renderInvitations(d.invitations||[]);
   renderMemberMessages(d.messages||[]);
-  if(d.membershipApproved)loadSupportTickets();
+  if(d.membershipApproved){loadSupportTickets();loadArticles()}
   const hasApplication=Boolean(d.application);
   document.querySelector('#applicationUploadCard').hidden=hasApplication;
   document.querySelector('#application').classList.toggle('has-application',hasApplication);
@@ -325,6 +393,29 @@ document.querySelector('#passwordForm').addEventListener('submit',async e=>{
   try{const r=await fetch(apiPath('/api/member/password'),{method:'PUT',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify({currentPassword:data.currentPassword,newPassword:data.newPassword})});const d=await r.json();if(!r.ok)throw new Error(d.error||'Şifre güncellenemedi');e.target.reset();status.textContent='Şifreniz güncellendi.'}catch(x){status.textContent=x.message}
 });
 
+document.querySelector('#articleImageFile')?.addEventListener('change',async e=>{
+  try{
+    articleMessage.textContent='Görsel WebP olarak hazırlanıyor…';
+    const url=await compressAndUploadArticleImage(e.target);
+    document.querySelector('#articleImagePath').value=url;
+    showArticleImagePreview(url);
+    articleMessage.textContent='Görsel WebP olarak yüklendi.';
+  }catch(err){articleMessage.textContent=err.message}
+});
+document.querySelector('#articleForm')?.addEventListener('submit',async e=>{
+  e.preventDefault();
+  const form=e.target,wasEdit=currentEditArticle;
+  window.PeyzajRichEditor?.sync(form.body);
+  articleMessage.textContent=wasEdit?'Makaleniz güncelleniyor…':'Makaleniz gönderiliyor…';
+  try{
+    const payload=JSON.stringify(Object.fromEntries(new FormData(form)));
+    const r=await fetch(apiPath(wasEdit?`/api/member/articles/${wasEdit}`:'/api/member/articles'),{method:wasEdit?'PUT':'POST',headers:{'Content-Type':'application/json'},credentials:'same-origin',body:payload});
+    const d=await r.json();if(!r.ok)throw new Error(d.error||'Makale gönderilemedi');
+    resetArticleForm();
+    articleMessage.textContent=wasEdit?'Makaleniz güncellendi ve tekrar onaya gönderildi.':'Makaleniz moderatör onayına gönderildi.';
+    await loadArticles();
+  }catch(err){articleMessage.textContent=err.message}
+});
 document.querySelector('#logout').onclick=async()=>{await fetch(apiPath('/api/member/logout'),{credentials:'same-origin'});location.href='uye-girisi.html'};
 document.querySelectorAll('.portal-side nav a[href^="#"]').forEach(a=>a.onclick=()=>{document.querySelectorAll('.portal-side nav a').forEach(x=>x.classList.remove('active'));a.classList.add('active')});
 setApprovedArea(false);
