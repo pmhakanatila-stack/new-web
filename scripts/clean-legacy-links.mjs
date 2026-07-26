@@ -18,7 +18,7 @@ function clean(value,config){
   for(const [key,current] of Object.entries(value)){
     if(legacy.test(String(key||'').trim())){delete value[key];changed++;continue}
     if(config.sourceKeys.has(key)&&legacy.test(String(current||'').trim())){
-      if(config.internal&&value.id)value[key]=`content-detail.html?id=${encodeURIComponent(value.id)}`;
+      if(config.internal&&value.id)value[key]=`icerik-detay.html?id=${encodeURIComponent(value.id)}`;
       else delete value[key];
       changed++;
       continue;
