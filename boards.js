@@ -1,6 +1,13 @@
 const esc=s=>String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fallbackGroup='Diğer Kurullar';
 const groupPriority=['Yönetim Kurulu','Denetim Kurulu','Denetleme Kurulu','Danışma Kurulu','Komisyon'];
+const groupDescriptions={
+  'Yönetim Kurulu':'Derneğin günlük işleyişini yürütür, stratejik kararları alır ve PEYZAJDER’i temsil eder.',
+  'Denetim Kurulu':'Derneğin mali işlemlerini ve hesaplarını bağımsız olarak denetler.',
+  'Denetleme Kurulu':'Derneğin mali işlemlerini ve hesaplarını bağımsız olarak denetler.',
+  'Danışma Kurulu':'Yönetim kuruluna stratejik konularda görüş ve deneyim aktarır.',
+  'Komisyon':'Belirli konu başlıklarında çalışma yürüten uzman ekiplerdir.'
+};
 const normalize=s=>String(s||'').trim()||fallbackGroup;
 const ascii=s=>String(s||'').toLocaleLowerCase('tr')
   .replaceAll('ı','i').replaceAll('ğ','g').replaceAll('ü','u').replaceAll('ş','s').replaceAll('ö','o').replaceAll('ç','c')
@@ -43,12 +50,15 @@ function renderGroups(items){
 
   const groups=[...new Set(active.map(x=>normalize(x.title)))].sort((a,b)=>groupRank(a)-groupRank(b)||a.localeCompare(b,'tr'));
 
-  root.innerHTML=groups.length?groups.map((group,gi)=>{
+  root.innerHTML=groups.length?groups.map((group)=>{
     const members=active.filter(x=>normalize(x.title)===group).sort(memberSort(group));
+    const description=groupDescriptions[group];
     return `<section class="board-group">
       <div class="group-head">
-        <span>${String(gi+1).padStart(2,'0')}</span>
-        <div><p>KURUMSAL YAPI</p><h2>${esc(group)}</h2><small>${members.length} kayıt</small></div>
+        <p class="eyebrow">Kurumsal yapı</p>
+        <h2>${esc(group)}</h2>
+        ${description?`<p class="group-desc">${esc(description)}</p>`:''}
+        <small>${members.length} kayıt</small>
       </div>
       <div class="board-grid">
         ${members.map((x,i)=>{const portrait=hasPortrait(x.photo);return`<article class="board-card ${i===0&&group==='Yönetim Kurulu'?'featured':''}">

@@ -1,27 +1,28 @@
 .portrait.placeholder{
   position:relative;
-  min-height:100%;
   overflow:hidden;
+  display:grid;
+  place-items:center;
   background:
-    radial-gradient(circle at 50% 32%,rgba(189,214,110,.28) 0 24%,transparent 25%),
+    radial-gradient(circle at 50% 34%,rgba(189,214,110,.28) 0 26%,transparent 26.4%),
     linear-gradient(145deg,#dfe9df,#b9cbb8);
 }
 
 .portrait.placeholder:before{
   content:"";
-  width:58px;
-  height:58px;
+  width:64px;
+  height:64px;
   border-radius:50%;
   background:#f6f8f2;
-  box-shadow:0 78px 0 34px #f6f8f2;
+  box-shadow:0 84px 0 38px #f6f8f2;
   opacity:.92;
-  transform:translateY(-42px);
+  transform:translateY(-46px);
 }
 
 .portrait.placeholder:after{
   content:"PEYZAJDER";
   position:absolute;
-  bottom:26px;
+  bottom:16px;
   left:50%;
   transform:translateX(-50%);
   color:#456c51;
@@ -32,15 +33,22 @@
 
 .portrait.placeholder span{
   position:absolute;
-  top:18px;
-  right:15px;
-  width:34px;
-  height:34px;
+  top:14px;
+  right:14px;
+  width:38px;
+  height:38px;
   display:grid;
   place-items:center;
   border-radius:50%;
   background:#173523;
   color:#bdd66e;
-  font:700 10px Manrope,sans-serif;
+  font:700 11px Manrope,sans-serif;
   letter-spacing:.04em;
+}
+
+.board-card.featured .portrait.placeholder:before{
+  width:78px;
+  height:78px;
+  box-shadow:0 100px 0 46px #f6f8f2;
+  transform:translateY(-54px);
 }
