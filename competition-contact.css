@@ -12,13 +12,23 @@
 .competition-sponsor-logo span{font:800 13px Manrope;color:#456b4f;text-align:center}
 .competition-section{padding:85px max(6vw,30px);background:#fff}
 .competition-section.muted-section{background:#eef1eb}
-.competition-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
+.competition-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:18px}
 .competition-card,.competition-empty{background:#fff;border:1px solid #d8ddd6;min-height:420px;display:flex;flex-direction:column;transition:transform .35s,box-shadow .35s}
 .muted-section .competition-card,.muted-section .competition-empty{background:#f9faf6}
 .competition-card:hover{transform:translateY(-7px);box-shadow:0 22px 50px #203d2918}
-.competition-media{height:210px;background:linear-gradient(135deg,#dce8d8,#a2ba9a);display:grid;place-items:center;overflow:hidden}
+.competition-media{position:relative;height:210px;background:linear-gradient(135deg,#dce8d8,#a2ba9a);display:grid;place-items:center;overflow:hidden}
 .competition-media img{height:100%;width:100%;object-fit:cover}
 .competition-media span,.competition-empty span{font:700 22px Manrope;color:#355841;letter-spacing:.08em}
+.competition-media.has-fallback img{filter:saturate(.82) brightness(.9)}
+.competition-media.has-fallback:after{content:"";position:absolute;inset:0;background:linear-gradient(200deg,rgba(23,53,35,.1) 35%,rgba(15,35,24,.68) 100%)}
+.competition-media.has-fallback b{position:absolute;left:18px;bottom:16px;z-index:2;display:inline-flex;align-items:center;gap:9px;color:#fff;font:800 11px Manrope,sans-serif;letter-spacing:.14em;text-transform:uppercase}
+.competition-media.has-fallback b:before{content:"P";width:26px;height:26px;border-radius:50%;background:#bdd66e;color:#173523;display:grid;place-items:center;font:800 12px Manrope,sans-serif}
+.competition-grid:has(>:only-child) .competition-card{grid-column:1/-1;display:grid;grid-template-columns:1.15fr 1fr;min-height:360px}
+.competition-grid:has(>:only-child) .competition-media{height:100%}
+.competition-grid:has(>:only-child) .competition-copy{padding:42px;justify-content:center}
+.competition-grid:has(>:only-child) .competition-copy h3{font-size:30px}
+.competition-grid:has(>:only-child) .competition-empty{grid-column:1/-1;max-width:640px;margin:0 auto;padding:50px}
+@media(max-width:800px){.competition-grid:has(>:only-child) .competition-card{grid-template-columns:1fr;min-height:0}.competition-grid:has(>:only-child) .competition-media{height:230px}}
 .competition-copy{padding:25px;display:flex;flex-direction:column;flex:1}
 .competition-copy small{font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:#55735d;font-weight:700}
 .competition-copy h3{font-size:24px;line-height:1.18;margin:12px 0}

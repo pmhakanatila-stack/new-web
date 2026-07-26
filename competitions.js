@@ -9,6 +9,7 @@ const plain=s=>{
 };
 const pick=(item,keys)=>keys.map(k=>item?.[k]).find(Boolean)||'';
 const asDate=v=>v?new Date(v).toLocaleDateString('tr-TR'):'Tarih duyurulacak';
+const FALLBACK_IMAGE='assets/hero-landscape-award.png';
 
 function normalize(item){
   const title=plain(pick(item,['title','name','competition_title','baslik']))||'Yarışma';
@@ -33,7 +34,7 @@ function card(item,type){
   const x=normalize(item);
   const label=type==='active_competitions'?'Aktif yarışma':type==='result_competitions'?'Sonuçlandı':'Tamamlandı';
   return `<article class="competition-card">
-    <div class="competition-media">${x.image?`<img src="${esc(x.image)}" alt="${esc(x.title)}">`:'<span>PEYZAJDER</span>'}</div>
+    <div class="competition-media${x.image?'':' has-fallback'}"><img src="${esc(x.image||FALLBACK_IMAGE)}" alt="${esc(x.title)}">${x.image?'':'<b>PEYZAJDER</b>'}</div>
     <div class="competition-copy">
       <small>${label}</small>
       <h3>${esc(x.title)}</h3>
@@ -78,6 +79,12 @@ async function load(){
       const list=Array.isArray(data[type])?data[type]:[];
       host.innerHTML=list.length?list.map(x=>card(x,type)).join(''):emptyMessage(type);
     });
+    const statActive=document.querySelector('#statActiveCount');
+    const statResult=document.querySelector('#statResultCount');
+    const statCompleted=document.querySelector('#statCompletedCount');
+    if(statActive)statActive.textContent=(data.active_competitions||[]).length;
+    if(statResult)statResult.textContent=(data.result_competitions||[]).length;
+    if(statCompleted)statCompleted.textContent=(data.completed_competitions||[]).length;
     statusEl.textContent='Yarışma verileri dijital platformdan güncellendi.';
   }catch(err){
     statusEl.textContent='Yarışma verileri şu anda alınamadı. Platform bağlantısı aşağıda açık bırakıldı.';

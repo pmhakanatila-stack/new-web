@@ -9,7 +9,7 @@
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css?v=20260725-scroll-fix">
   <link rel="stylesheet" href="archive.css">
-  <link rel="stylesheet" href="competition-contact.css?v=20260713-sponsor-panel">
+  <link rel="stylesheet" href="competition-contact.css?v=20260726-hero-redesign">
   <link rel="stylesheet" href="brand-logo.css">
 <script src="config.js"></script><link rel="stylesheet" href="site-runtime.css?v=20260715"><script src="site-runtime.js?v=20260715" defer></script></head>
 <body class="archive-body competitions-body">
@@ -18,13 +18,21 @@
     <nav><a href="index.html">Ana sayfa</a><a href="iletisim.html">İletişim</a><a href="https://peyzajder.com" target="_blank" rel="noopener">Dijital Yarışma Platformu</a></nav>
   </header>
   <main>
-    <section class="archive-hero competition-hero">
-      <p class="eyebrow">PEYZAJDER yarışmaları</p>
-      <h1>Dijital yarışma platformu,<br><em>dernek sitesinde görünür.</em></h1>
-      <p>Aktif yarışmalar, sonuçlar ve tamamlanan yarışmalar peyzajder.com platformundan otomatik alınır.</p>
-      <div class="competition-actions">
-        <a class="button button-light" href="https://peyzajder.com" target="_blank" rel="noopener">Dijital Yarışma Platformuna Git →</a>
-        <a class="text-link" href="#active">Aktif yarışmaları gör</a>
+    <section class="hero competitions-hero">
+      <div class="hero-media"><img src="assets/hero-landscape-award.png" alt="PEYZAJDER yarışma ödüllü peyzaj uygulaması"></div>
+      <div class="hero-copy">
+        <p class="eyebrow">PEYZAJDER yarışmaları</p>
+        <h1>Fikirleri görünür kılan,<br><em>sonuçları şeffaflaştıran</em> yarışma alanı.</h1>
+        <p>Aktif yarışmalar, sonuçlar ve tamamlanan süreçler peyzajder.com dijital yarışma platformundan otomatik olarak senkronize edilir.</p>
+        <div class="hero-actions">
+          <a class="button" href="https://peyzajder.com" target="_blank" rel="noopener">Dijital Yarışma Platformuna Git →</a>
+          <a class="text-link" href="#active">Aktif yarışmaları gör <span>↓</span></a>
+        </div>
+        <div class="hero-stats" id="competitionHeroStats">
+          <div><strong id="statActiveCount">–</strong><span>Aktif yarışma</span></div>
+          <div><strong id="statResultCount">–</strong><span>Sonuçlanan</span></div>
+          <div><strong id="statCompletedCount">–</strong><span>Tamamlanan</span></div>
+        </div>
       </div>
     </section>
 
@@ -52,7 +60,7 @@
       <div class="competition-grid" data-list="completed_competitions"></div>
     </section>
   </main>
-  <script src="competitions.js?v=20260721-html-cleanup"></script>
+  <script src="competitions.js?v=20260726-hero-redesign"></script>
   <script src="smooth-anchors.js?v=20260725"></script>
 </body>
 </html>
