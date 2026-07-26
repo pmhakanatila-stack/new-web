@@ -42,6 +42,8 @@ function hasPortrait(photo){
   return p&&!p.includes('peyzajder-logo')&&!placeholderFiles.some(file=>p.includes(file));
 }
 
+let memberIndex=[];
+
 function renderGroups(items){
   const root=document.querySelector('#boardGroups');
   const active=items
@@ -50,6 +52,7 @@ function renderGroups(items){
 
   const groups=[...new Set(active.map(x=>normalize(x.title)))].sort((a,b)=>groupRank(a)-groupRank(b)||a.localeCompare(b,'tr'));
 
+  memberIndex=[];
   root.innerHTML=groups.length?groups.map((group)=>{
     const members=active.filter(x=>normalize(x.title)===group).sort(memberSort(group));
     const description=groupDescriptions[group];
@@ -61,7 +64,11 @@ function renderGroups(items){
         <small>${members.length} kayıt</small>
       </div>
       <div class="board-grid">
-        ${members.map((x,i)=>{const portrait=hasPortrait(x.photo);return`<article class="board-card ${i===0&&group==='Yönetim Kurulu'?'featured':''}">
+        ${members.map((x,i)=>{
+          const portrait=hasPortrait(x.photo);
+          const id=memberIndex.length;
+          memberIndex.push(x);
+          return`<article class="board-card ${i===0&&group==='Yönetim Kurulu'?'featured':''}" data-member-id="${id}" tabindex="0" role="button" aria-haspopup="dialog" aria-label="${esc(x.name)} özgeçmişini görüntüle">
           <div class="portrait ${portrait?'':'placeholder'}">${portrait?`<img src="${esc(x.photo)}" alt="${esc(x.name)}">`:`<span>${esc((x.name||'').split(' ').map(y=>y[0]).slice(0,2).join(''))}</span>`}</div>
           <div>
             <small>${esc(x.role||'Kurul Üyesi')}</small>
@@ -74,6 +81,56 @@ function renderGroups(items){
     </section>`;
   }).join(''):'<p class="empty">Kurul kayıtları yakında yayınlanacaktır.</p>';
 }
+
+function openBoardModal(x){
+  const modal=document.querySelector('#boardModal');
+  if(!modal||!x)return;
+  const portrait=hasPortrait(x.photo);
+  const body=modal.querySelector('.board-modal-body');
+  body.innerHTML=`
+    <div class="board-modal-portrait portrait${portrait?'':' placeholder'}">${portrait?`<img src="${esc(x.photo)}" alt="${esc(x.name)}">`:`<span>${esc((x.name||'').split(' ').map(y=>y[0]).slice(0,2).join(''))}</span>`}</div>
+    <div class="board-modal-info">
+      <small>${esc(x.role||'Kurul Üyesi')}</small>
+      <h3>${esc(x.name)}</h3>
+      ${x.term?`<b>${esc(x.term)}</b>`:''}
+      <p>${x.bio?esc(x.bio):'Özgeçmiş bilgisi henüz eklenmedi.'}</p>
+    </div>`;
+  modal.hidden=false;
+  requestAnimationFrame(()=>modal.classList.add('open'));
+  document.body.style.overflow='hidden';
+  modal.querySelector('.board-modal-close')?.focus();
+}
+
+function closeBoardModal(){
+  const modal=document.querySelector('#boardModal');
+  if(!modal||modal.hidden)return;
+  modal.classList.remove('open');
+  document.body.style.overflow='';
+  setTimeout(()=>{modal.hidden=true},220);
+}
+
+(()=>{
+  const root=document.querySelector('#boardGroups');
+  const modal=document.querySelector('#boardModal');
+  root?.addEventListener('click',e=>{
+    const card=e.target.closest('.board-card');
+    if(!card)return;
+    openBoardModal(memberIndex[Number(card.dataset.memberId)]);
+  });
+  root?.addEventListener('keydown',e=>{
+    if(e.key!=='Enter'&&e.key!==' ')return;
+    const card=e.target.closest('.board-card');
+    if(!card)return;
+    e.preventDefault();
+    openBoardModal(memberIndex[Number(card.dataset.memberId)]);
+  });
+  modal?.addEventListener('click',e=>{
+    if(e.target.matches('.board-modal-backdrop,.board-modal-close'))closeBoardModal();
+  });
+  document.addEventListener('keydown',e=>{
+    if(e.key==='Escape')closeBoardModal();
+  });
+})();
 
 const apiPath=path=>window.peyzajderApiPath?window.peyzajderApiPath(path):String(path||'');
 fetch(apiPath('/api/public/boards'))
