@@ -1,22 +1,15 @@
 .platform-link{color:#8b5b3d;border-color:#8b5b3d}
 .competition-actions{display:flex;gap:22px;align-items:center;flex-wrap:wrap;margin-top:36px}
 .competition-status{padding:18px max(7vw,30px);background:#f8f8f4;border-bottom:1px solid #d8ddd6;color:#536158;font-size:13px}
-.competition-sponsors{padding:38px max(6vw,30px);background:#f8f8f4;border-bottom:1px solid #d8ddd6}
-.competition-sponsors .section-head h2{font-size:clamp(25px,3vw,38px)}
-.sponsor-groups{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-top:18px;align-items:start}
-.sponsor-group{min-width:0;background:#fff;border:1px solid #d8ddd6;padding:16px 18px}
-.sponsor-group h3{margin:0 0 12px;font:800 15px Manrope;color:#173523}
-.sponsor-group-grid,.sponsor-group>div{display:grid;grid-template-columns:1fr;justify-content:start;gap:10px}
-.sponsor-group--main .sponsor-group-grid,.sponsor-group--main>div{max-width:none}
-.competition-sponsor-logo{min-height:66px;padding:10px 14px;border:1px solid #d8ddd6;background:#fff;display:grid;place-items:center;transition:transform .25s,box-shadow .25s,border-color .25s}
+.competition-sponsors{padding:62px max(6vw,30px);background:#f8f8f4;border-bottom:1px solid #d8ddd6}
+.sponsor-groups{display:grid;gap:22px;margin-top:24px}
+.sponsor-group{background:#fff;border:1px solid #d8ddd6;padding:24px}
+.sponsor-group h3{margin:0 0 18px;font:800 18px Manrope;color:#173523}
+.sponsor-group>div{display:flex;flex-wrap:wrap;gap:14px}
+.competition-sponsor-logo{min-width:160px;height:86px;padding:14px 20px;border:1px solid #d8ddd6;background:#fff;display:grid;place-items:center;transition:transform .25s,box-shadow .25s,border-color .25s}
 .competition-sponsor-logo:hover{transform:translateY(-4px);box-shadow:0 18px 36px #203d2915;border-color:#bdd66e}
-.competition-sponsor-logo img{max-width:120px;max-height:42px;object-fit:contain}
-.competition-sponsor-logo span{font:800 12px Manrope;color:#456b4f;text-align:center}
-.competition-sponsor-name{min-height:40px;padding:8px 12px;border:1px solid #d8ddd6;background:#f8faf6;display:grid;place-items:center;text-align:center;transition:transform .25s,box-shadow .25s,border-color .25s,background .25s}
-.competition-sponsor-name span{font:800 12px Manrope;color:#31513c}
-.competition-sponsor-name:hover{transform:translateY(-3px);box-shadow:0 14px 30px #203d2912;border-color:#9fb2a3;background:#fff}
-.sponsor-group--gold .competition-sponsor-name{border-color:#d8bd72;background:#fffaf0}
-.sponsor-group--silver .competition-sponsor-name{border-color:#bdc9c1;background:#f4f7f5}
+.competition-sponsor-logo img{max-width:150px;max-height:56px;object-fit:contain}
+.competition-sponsor-logo span{font:800 13px Manrope;color:#456b4f;text-align:center}
 .competition-section{padding:85px max(6vw,30px);background:#fff}
 .competition-section.muted-section{background:#eef1eb}
 .competition-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:18px}
@@ -60,5 +53,5 @@
 .form-grid .full{grid-column:1/-1}
 .contact-form button{margin-top:20px}
 .form-message{margin-top:18px;color:#446d55;font-weight:700}
-@media(max-width:950px){.competition-grid,.contact-grid{grid-template-columns:1fr}.archive-header nav{gap:14px}.platform-link{display:none!important}.sponsor-groups{grid-template-columns:repeat(2,minmax(0,1fr))}.sponsor-group-grid,.sponsor-group>div{grid-template-columns:1fr}}
-@media(max-width:560px){.sponsor-groups{grid-template-columns:1fr}}
+@media(max-width:950px){.competition-grid,.contact-grid{grid-template-columns:1fr}.archive-header nav{gap:14px}.platform-link{display:none!important}.competition-sponsor-logo{min-width:calc(50% - 8px)}}
+@media(max-width:560px){.competition-sponsor-logo{min-width:100%}}
